@@ -12,7 +12,7 @@ Run and provide a directory with histogram dumps and the file extention used
 
 Use the following command to dump the live objects of a java process.
 
-    jmap -histo:live $JAVA_PID > memory-dump-$(date).histo
+    jmap -histo:live $JAVA_PID > memory-dump-$(date +%Y%m%d.%H%M%S).histo
     
 Generate multiple dumps with some time apart.
 
