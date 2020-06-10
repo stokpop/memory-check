@@ -24,8 +24,6 @@ import java.nio.file.Files
 import java.nio.file.attribute.BasicFileAttributes
 import java.time.Instant
 import java.time.LocalDateTime
-import kotlin.streams.asStream
-import kotlin.streams.toList
 
 class HistoReader {
 
@@ -39,31 +37,33 @@ class HistoReader {
      * Now uses file creation date. We might also parse filename for a date.
      */
     private fun dateForHistoFile(file: File): LocalDateTime {
-        try {
+        return try {
             val attr =
-                Files.readAttributes(file.toPath(), BasicFileAttributes::class.java)
+                    Files.readAttributes(file.toPath(), BasicFileAttributes::class.java)
             val fileTime = attr.creationTime()
-            return LocalDateTime.ofInstant(fileTime.toInstant(), MemoryCheck.useZoneOffset())
+            LocalDateTime.ofInstant(fileTime.toInstant(), MemoryCheck.useZoneOffset())
         } catch (ex: IOException) {
-            System.err.println("Unable to get creation date for $file, using last modified as work around.");
-            return LocalDateTime.from(Instant.ofEpochMilli(file.lastModified()))
+            System.err.println("Unable to get creation date for $file, using last modified as work around.")
+            LocalDateTime.from(Instant.ofEpochMilli(file.lastModified()))
         }
     }
 
-    fun readHisto(file: File) : List<HistoLine> {
-        return file.useLines {
-            it.asStream()
-                .map { it.trim() }
-                .filter { it.contains(':') }
-                .map { createHistoLine(it) }
-                .toList()
+    private fun readHisto(file: File) : List<HistoLine> {
+        return file.useLines { line ->
+            line.map { it.trim() }
+                    .filter { it.contains(':') } // very basic check for lines to parse...
+                    .map { createHistoLine(it) }
+                    .toList()
         }
     }
 
     private fun createHistoLine(line: String): HistoLine {
         val split = line.split("\\s+".toRegex())
-        if (split.size != 4) {
-            throw InvalidHistoLineException("Cannot read histo line (${split.size} elements, 4 expected): '$line' and '$split'");
+        // 5 elements can be found in java 9+ dumps with packages, example:
+        //    4:         88508        2124192  java.lang.String (java.base@11.0.6)
+        // the package is ignored
+        if (!(split.size == 4 || split.size == 5)) {
+            throw InvalidHistoLineException("Cannot read histo line (${split.size} elements, 4 or 5 expected): '$line' and '$split'")
         }
         val num = skipLastCharacter(split[0])
         val instances = split[1]

@@ -17,15 +17,15 @@ package nl.stokpop.memory.domain
 
 data class HistoLine(
         val className: ClassName,
-        val num: Long,
-        val instances: Long,
-        val bytes: Long
+        val num: Long?,
+        val instances: Long?,
+        val bytes: Long?
 ) {
     companion object {
-        fun createGhostLine(name: ClassName) = HistoLine(name, -1, -1, -1)
+        fun createGhostLine(name: ClassName) = HistoLine(name, null, null, null)
     }
 
     fun isGhost(): Boolean {
-        return num == -1L
+        return num == null
     }
 }

@@ -29,14 +29,14 @@ class HistoAnalyser {
 
     private fun processClassNameForHistoInfos(name: ClassName, histos: List<HistoInfo>): ClassGrowth {
         val histosForClassName = histos
-            .map { it.histogram.firstOrNull { name.equals(it.className) } ?: createGhostLine(name) }
+            .map { it.histogram.firstOrNull { name == it.className } ?: createGhostLine(name) }
             .toList()
         return ClassGrowth(name, histosForClassName, analyseGrowth(histosForClassName) { it.bytes })
     }
 
     fun analyseGrowth(
             histoLines: List<HistoLine>,
-            thingToCheck: (HistoLine) -> Long = { it.instances }): AnalysisResult {
+            thingToCheck: (HistoLine) -> Long? = { it.instances }): AnalysisResult {
 
         if (histoLines.isEmpty()) return AnalysisResult.UNKNOWN
 
@@ -60,7 +60,8 @@ class HistoAnalyser {
                 continue
             }
 
-            val currentValue = thingToCheck(line)
+            // only ghosts have null values
+            val currentValue = thingToCheck(line)!!
 
             if (lastValue != -1L) {
                 when {

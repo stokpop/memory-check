@@ -18,31 +18,88 @@ package nl.stokpop.memory
 import nl.stokpop.memory.domain.AnalysisResult
 import nl.stokpop.memory.domain.ClassGrowth
 import nl.stokpop.memory.domain.ClassGrowthTrend
+import nl.stokpop.memory.domain.HistoInfo
+import java.time.LocalDateTime
+import java.time.format.DateTimeFormatter
 
 class TextReport {
-    fun report(analysis: ClassGrowthTrend) {
+
+    fun report(histos: List<HistoInfo>, analysis: ClassGrowthTrend) {
+
+        val minSizeInBytes = 1024L
+
+        val header = "Histogram report - ${LocalDateTime.now().format(DateTimeFormatter.ISO_DATE_TIME)}"
+        val dashes = generateSequence { "-" }.take(header.length).joinToString(separator = "") { it }
+        println(dashes)
+        println(header)
+        println(dashes)
+
+        println()
+
+        histos.forEach { println("File: '${it.histoFile.name}' with date ${it.timestamp.format(DateTimeFormatter.ISO_DATE_TIME)}") }
+
+        val doReportUnknowns = false
+        val doReportShrinks = false
 
         println("\nNumber of GROW ${analysis.statusCount(AnalysisResult.GROW)}")
         println("Number of STABLE ${analysis.statusCount(AnalysisResult.STABLE)}")
         println("Number of SHRINK ${analysis.statusCount(AnalysisResult.SHRINK)}")
         println("Number of UNKNOWN ${analysis.statusCount(AnalysisResult.UNKNOWN)}")
 
+        println("\nBelow only results are printed that have remaining size of at least ${HumanReadable.humanReadableMemorySize(minSizeInBytes)} in last histogram.")
+
         println("\nFound possible memory leaks:")
-        analysis.statusFilter(AnalysisResult.GROW).forEach { reportLine(it) }
 
-        println("\nFound shrinks:")
-        analysis.statusFilter(AnalysisResult.SHRINK).forEach { reportLine(it) }
+        val bytesFilter: (ClassGrowth) -> Boolean = { largerThanBytesInLastHisto(it, minSizeInBytes) }
 
-        println("\nFound unknowns:")
-        analysis.statusFilter(AnalysisResult.UNKNOWN).forEach { reportLine(it) }
+        analysis.statusFilter(AnalysisResult.GROW).filter(bytesFilter).forEach { reportLine(it) }
 
+        if (doReportShrinks) {
+            println("\nFound shrinks:")
+            analysis.statusFilter(AnalysisResult.SHRINK).filter(bytesFilter).forEach { reportLine(it) }
+        }
+
+        if (doReportUnknowns) {
+            println("\nFound unknowns:")
+            analysis.statusFilter(AnalysisResult.UNKNOWN).filter(bytesFilter).forEach { reportLine(it) }
+        }
     }
+
+    private fun largerThanBytesInLastHisto(it: ClassGrowth, minSizeInBytes: Long) =
+            it.histoLines.last().bytes != null && it.histoLines.last().bytes!! > minSizeInBytes
 
     fun reportLine(line: ClassGrowth) {
 
-        val instances = line.histoLines.map { it.instances }.map { if (it == -1L) "-" else it.toString() }.toList()
-        val bytes = line.histoLines.map { it.bytes }.map { if (it == -1L) "-" else HumanReadable.humanReadableMemorySize(it) }.toList()
+        val charForNull = '_'
 
-        println("${line.className.name} instances: ${instances} size: ${bytes}")
+        val instances = line.histoLines
+                .map { it.instances }
+                .map { it?.toString() ?: charForNull }
+
+        val instancesDiffs = line.histoLines
+                .asSequence()
+                .map { it.instances }
+                .zipWithNext()
+                .map { diffOrNull(it) }
+                .map { it?.toString() ?: charForNull }
+                .toList()
+
+        val bytes = line.histoLines
+                .asSequence()
+                .map { it.bytes }
+                .map { if (it == null) charForNull else HumanReadable.humanReadableMemorySize(it) }
+
+        val bytesDiff = line.histoLines
+                .asSequence()
+                .map { it.bytes }
+                .zipWithNext()
+                .map { diffOrNull(it) }
+                .map { if (it == null) charForNull else HumanReadable.humanReadableMemorySize(it) }
+
+        println("${line.className.name} instances: $instances diff: $instancesDiffs size: $bytes diff: $bytesDiff")
     }
+
+    private fun diffOrNull(it: Pair<Long?, Long?>) =
+            if (it.first == null || it.second == null) null else it.second!! - it.first!!
+
 }

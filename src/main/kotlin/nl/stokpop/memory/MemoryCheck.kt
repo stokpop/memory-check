@@ -65,7 +65,7 @@ class MemoryCheck {
 
         val analysis = HistoAnalyser().analyse(readHistos)
 
-        TextReport().report(analysis)
+        TextReport().report(readHistos, analysis)
 
     }
 }
