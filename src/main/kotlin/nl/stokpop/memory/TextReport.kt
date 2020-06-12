@@ -70,7 +70,7 @@ class TextReport {
 
     fun reportLine(line: ClassGrowth) {
 
-        val charForNull = '_'
+        val charForNull = "_"
 
         val instances = line.histoLines
                 .map { it.instances }

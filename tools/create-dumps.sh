@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
 
+if [[ $# -lt 3 ]] ; then
+    echo 'Please provide: [application name] [number of histos] [delay in milliseconds]'
+    exit 1
+fi
+
 APP_NAME=$1
 TIMES=$2
 DELAY_MS=$3

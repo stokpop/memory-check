@@ -6,7 +6,7 @@ Read multiple memory histograms from Java and report on possible memory leaks.
 
 Run and provide a directory with histogram dumps and the file extention used
 
-    java -jar memory-check.jar /path/to/histo-dumps histo
+    java -jar memory-check-exec.jar /path/to/histo-dumps histo
     
 # Generate histogram dump
 
@@ -14,10 +14,18 @@ Use the following command to dump the live objects of a java process.
 
     jmap -histo:live $JAVA_PID > memory-dump-$(date +%Y%m%d.%H%M%S).histo
     
-Generate multiple dumps with some time apart.
+Generate 4 dumps with 10 seconds apart for application-name:
 
+    ./tools/create-dumps.sh application-name 4 10000   
     
+Generate histogram via jmx:
 
+    java -cp memory-check-exec.jar nl.stokpop.jmx.FetchHistogramKt localhost 5000
+
+# Build executable jar
+
+    ./gradlew fatJar
+    
 # Example output
 
     Number of GROW 12
