@@ -1,13 +1,14 @@
-import java.time.Year
 import org.gradle.jvm.tasks.Jar
+import java.time.Year
 
 group = "nl.stokpop"
 version = "0.0.1-SNAPSHOT"
-description = "MemoryCheck"
+description = "memory-check"
 
 plugins {
     id("org.jetbrains.kotlin.jvm") version "1.3.61"
     id("com.github.hierynomus.license") version "0.15.0"
+    id("com.vanniktech.maven.publish") version "0.11.1"
     application
 }
 
@@ -40,6 +41,12 @@ application {
     mainClassName = "nl.stokpop.memory.MemoryCheckKt"
 }
 
+tasks {
+    "assemble" {
+        dependsOn(fatJar)
+    }
+}
+
 val fatJar = task("fatJar", type = Jar::class) {
     archiveBaseName.set("${project.name}-exec")
     manifest {
@@ -49,10 +56,4 @@ val fatJar = task("fatJar", type = Jar::class) {
     }
     from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it).matching { exclude { it.name.contains("MANIFEST") } } })
     with(tasks.jar.get() as CopySpec)
-}
-
-tasks {
-    "build" {
-        dependsOn(fatJar)
-    }
 }
