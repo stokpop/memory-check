@@ -21,16 +21,19 @@ import java.time.ZoneId
 
 fun main(args: Array<String>) {
 
-    if (args.size != 2) {
-        println("please provide a directory and file extension for histograms to read")
+    if (args.size != 2 && args.size != 3) {
+        println("memory check reads class histograms")
+        println("arguments: [directory] [file extension] (settings)")
+        println(" settings - a comma separated file with categories to report: grow,shrink,unknown,stable. Default: grow")
         exit(1)
     }
 
     val directory = args[0]
     val extension = args[1]
+    val reportConfig = ReportConfig(if (args.size == 3) args[2] else "grow")
 
     try {
-        MemoryCheck().processHistos(directory, extension)
+        MemoryCheck().processHistos(directory, extension, reportConfig)
     } catch (e : Exception) {
         println("Error: ${e.message}")
     }
@@ -46,7 +49,7 @@ class MemoryCheck {
         }
     }
 
-    fun processHistos(directory: String, extension: String) {
+    fun processHistos(directory: String, extension: String, reportConfig: ReportConfig) {
         val dir = File(directory)
         if (!dir.isDirectory) {
             throw MemoryCheckException("This is not a directory: $directory")
@@ -65,7 +68,7 @@ class MemoryCheck {
 
         val analysis = HistoAnalyser().analyse(readHistos)
 
-        TextReport().report(readHistos, analysis)
+        TextReport().report(readHistos, analysis, reportConfig)
 
     }
 }

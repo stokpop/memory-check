@@ -4,9 +4,13 @@ Read multiple memory histograms from Java and report on possible memory leaks.
 
 # Usage
 
-Run and provide a directory with histogram dumps and the file extention used
+Run and provide a directory with histogram dumps and the file extension used
 
     java -jar memory-check-exec.jar /path/to/histo-dumps histo
+
+Optionally a settings argument, consisting of comma separated list of 
+`grow,shrink,unknown,stable`. This determines which categories to report.
+Default is `grow`.
     
 # Generate histogram dump
 

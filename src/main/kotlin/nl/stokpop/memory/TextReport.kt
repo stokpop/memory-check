@@ -24,7 +24,7 @@ import java.time.format.DateTimeFormatter
 
 class TextReport {
 
-    fun report(histos: List<HistoInfo>, analysis: ClassGrowthTrend) {
+    fun report(histos: List<HistoInfo>, analysis: ClassGrowthTrend, config: ReportConfig) {
 
         val minSizeInBytes = 1024L
 
@@ -38,30 +38,32 @@ class TextReport {
 
         histos.forEach { println("File: '${it.histoFile.name}' with date ${it.timestamp.format(DateTimeFormatter.ISO_DATE_TIME)}") }
 
-        val doReportUnknowns = false
-        val doReportShrinks = false
-
         println("\nNumber of GROW ${analysis.statusCount(AnalysisResult.GROW)}")
         println("Number of STABLE ${analysis.statusCount(AnalysisResult.STABLE)}")
         println("Number of SHRINK ${analysis.statusCount(AnalysisResult.SHRINK)}")
         println("Number of UNKNOWN ${analysis.statusCount(AnalysisResult.UNKNOWN)}")
 
         println("\nBelow only results are printed that have remaining size of at least ${HumanReadable.humanReadableMemorySize(minSizeInBytes)} in last histogram.")
-
-        println("\nFound possible memory leaks:")
-
         val bytesFilter: (ClassGrowth) -> Boolean = { largerThanBytesInLastHisto(it, minSizeInBytes) }
 
-        analysis.statusFilter(AnalysisResult.GROW).filter(bytesFilter).forEach { reportLine(it) }
+        if (config.doReportGrow) {
+            println("\nFound possible memory leaks:")
+            analysis.statusFilter(AnalysisResult.GROW).filter(bytesFilter).forEach { reportLine(it) }
+        }
 
-        if (doReportShrinks) {
+        if (config.doReportShrinks) {
             println("\nFound shrinks:")
             analysis.statusFilter(AnalysisResult.SHRINK).filter(bytesFilter).forEach { reportLine(it) }
         }
 
-        if (doReportUnknowns) {
+        if (config.doReportUnknowns) {
             println("\nFound unknowns:")
             analysis.statusFilter(AnalysisResult.UNKNOWN).filter(bytesFilter).forEach { reportLine(it) }
+        }
+
+        if (config.doReportStable) {
+            println("\nFound stable:")
+            analysis.statusFilter(AnalysisResult.STABLE).filter(bytesFilter).forEach { reportLine(it) }
         }
     }
 
@@ -88,6 +90,7 @@ class TextReport {
                 .asSequence()
                 .map { it.bytes }
                 .map { if (it == null) charForNull else HumanReadable.humanReadableMemorySize(it) }
+                .toList()
 
         val bytesDiff = line.histoLines
                 .asSequence()
@@ -95,6 +98,7 @@ class TextReport {
                 .zipWithNext()
                 .map { diffOrNull(it) }
                 .map { if (it == null) charForNull else HumanReadable.humanReadableMemorySize(it) }
+                .toList()
 
         println("${line.className.name} instances: $instances diff: $instancesDiffs size: $bytes diff: $bytesDiff")
     }
