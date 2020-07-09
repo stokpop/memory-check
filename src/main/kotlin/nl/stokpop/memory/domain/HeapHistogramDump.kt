@@ -18,10 +18,13 @@ package nl.stokpop.memory.domain
 import java.io.File
 import java.time.LocalDateTime
 
-data class HistoInfo (
+/**
+ * Representation of a heap histogram dump, which is one file with the histogram lines.
+ */
+data class HeapHistogramDump (
     val histoFile: File,
     val timestamp: LocalDateTime,
-    val histogram: List<HistoLine>
+    val histogram: List<HeapHistogramDumpLine>
     ) {
     fun findAllClassNames() : List<ClassName> {
         return histogram.map { it.className }.toList()

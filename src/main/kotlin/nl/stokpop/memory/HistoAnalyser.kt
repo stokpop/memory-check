@@ -15,19 +15,27 @@
  */
 package nl.stokpop.memory
 
-import nl.stokpop.memory.domain.HistoLine.Companion.createGhostLine
 import nl.stokpop.memory.domain.*
+import nl.stokpop.memory.domain.HeapHistogramDumpLine.Companion.createGhostLine
 
-class HistoAnalyser {
-    fun analyse(histos: List<HistoInfo>): ClassGrowthTrend {
-        if (histos.isEmpty()) return ClassGrowthTrend(emptyMap())
+object HistoAnalyser {
+    fun analyse(histos: List<HeapHistogramDump>): ClassGrowthTrend {
+        if (histos.isEmpty()) return ClassGrowthTrend(emptyList(), emptyMap())
 
         // what if new classes appear in new histos? create super set!
         val classNames = histos.flatMap { it.findAllClassNames() }.toSet()
-        return ClassGrowthTrend(classNames.map { it to processClassNameForHistoInfos(it, histos) }.toMap())
+        val timestamps = histos.map { it.timestamp.atZone(MemoryCheck.useZoneOffset()).toInstant().toEpochMilli() }.toList()
+        // sort on number of bytes in last heap histogram dump, reverse() -> biggest first
+        val data = classNames
+                .map { it to processClassNameForHistoInfos(it, histos) }
+                .toList()
+                .sortedBy { (_, value) -> value.histoLines.last().bytes }
+                .reversed()
+                .toMap()
+        return ClassGrowthTrend(timestamps, data)
     }
 
-    private fun processClassNameForHistoInfos(name: ClassName, histos: List<HistoInfo>): ClassGrowth {
+    private fun processClassNameForHistoInfos(name: ClassName, histos: List<HeapHistogramDump>): ClassGrowth {
         val histosForClassName = histos
             .map { it.histogram.firstOrNull { name == it.className } ?: createGhostLine(name) }
             .toList()
@@ -35,8 +43,8 @@ class HistoAnalyser {
     }
 
     fun analyseGrowth(
-            histoLines: List<HistoLine>,
-            thingToCheck: (HistoLine) -> Long? = { it.instances }): AnalysisResult {
+            histoLines: List<HeapHistogramDumpLine>,
+            thingToCheck: (HeapHistogramDumpLine) -> Long? = { it.instances }): AnalysisResult {
 
         if (histoLines.isEmpty()) return AnalysisResult.UNKNOWN
 

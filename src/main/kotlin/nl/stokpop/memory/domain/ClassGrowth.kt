@@ -17,6 +17,6 @@ package nl.stokpop.memory.domain
 
 data class ClassGrowth (
         val className: ClassName,
-        val histoLines: List<HistoLine>,
+        val histoLines: List<HeapHistogramDumpLine>,
         val analysisResult: AnalysisResult
 )

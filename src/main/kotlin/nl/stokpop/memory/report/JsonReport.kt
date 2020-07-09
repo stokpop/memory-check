@@ -13,15 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package nl.stokpop.memory
+package nl.stokpop.memory.report
 
-import nl.stokpop.memory.domain.AnalysisResult
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonConfiguration
+import nl.stokpop.memory.domain.json.HeapHistogramDumpReport
+import java.io.File
 
-class ReportConfig(settings: String) {
-    private val uppercaseSettings = settings.toUpperCase()
-    val doReportGrow = uppercaseSettings.contains(AnalysisResult.GROW.name)
-    val doReportUnknowns = uppercaseSettings.contains(AnalysisResult.UNKNOWN.name)
-    val doReportShrinks = uppercaseSettings.contains(AnalysisResult.SHRINK.name)
-    val doReportStable  = uppercaseSettings.contains(AnalysisResult.STABLE.name)
+object JsonReport {
 
+    fun report(data: HeapHistogramDumpReport) {
+        val json = Json(JsonConfiguration.Stable)
+        val jsonString = json.stringify(HeapHistogramDumpReport.serializer(), data)
+        File(data.reportConfig.reportDirectory,"heapHistogramDumpReport-${data.reportConfig.identifier}.json").writeText(jsonString)
+    }
 }

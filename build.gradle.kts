@@ -6,7 +6,8 @@ version = "1.0.0"
 description = "memory-check"
 
 plugins {
-    id("org.jetbrains.kotlin.jvm") version "1.3.61"
+    id("org.jetbrains.kotlin.jvm") version "1.3.72"
+    kotlin("plugin.serialization") version "1.3.72"
     id("com.github.hierynomus.license") version "0.15.0"
     id("com.vanniktech.maven.publish") version "0.11.1"
     application
@@ -19,6 +20,8 @@ repositories {
 dependencies {
     implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.20.0")
+    implementation("com.github.ajalt:clikt:2.7.1")
     testImplementation("org.jetbrains.kotlin:kotlin-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.6.2")

@@ -15,27 +15,50 @@
  */
 package nl.stokpop.memory
 
+import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.parameters.options.default
+import com.github.ajalt.clikt.parameters.options.option
+import com.github.ajalt.clikt.parameters.types.int
+import com.github.ajalt.clikt.parameters.types.long
+import nl.stokpop.memory.report.*
 import java.io.File
-import java.lang.System.exit
+import java.time.LocalDateTime
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 
-fun main(args: Array<String>) {
+fun main(args: Array<String>) = MemoryCheckCli().main(args)
 
-    if (args.size != 2 && args.size != 3) {
-        println("memory check reads class histograms")
-        println("arguments: [directory] [file extension] (settings)")
-        println(" settings - a comma separated file with categories to report: grow,shrink,unknown,stable. Default: grow")
-        exit(1)
-    }
+class MemoryCheckCli : CliktCommand() {
+    val directory: String by option("-d", "--dir", help = "Look in this directory for heap histogram dumps.").default(".")
+    val extension: String by option("-e", "--ext", help = "Only process files with this extension, example: 'histo'").default("histo")
+    val identifier: String by option("-i", "--id", help = "Identifier for the report, example: 'test-run-1234'. Include #ts# for a timestamp.").default("anonymous-#ts#")
+    val reportDirectory: String by option("-r", "--report-dir", help = "Full or relative path to directory for the reports, example: '.' for current directory").default(".")
+    val classLimit: Int by option("-c", "--class-limit", help = "Report only the top 'limit' classes, example: '128'.").int().default(128)
+    val bytesLimit: Long by option("-b", "--bytes-limit", help = "Report class only when last dump has at least x bytes, example: '2048'").long().default(2048)
+    val settings: String by option("-s", "--settings", help = "Comma separated file with categories to report: grow,shrink,unknown,stable. Default: 'grow'").default("grow")
 
-    val directory = args[0]
-    val extension = args[1]
-    val reportConfig = ReportConfig(if (args.size == 3) args[2] else "grow")
+    override fun run() {
+        val reportDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"))
 
-    try {
-        MemoryCheck().processHistos(directory, extension, reportConfig)
-    } catch (e : Exception) {
-        println("Error: ${e.message}")
+        val timestampRegex = "#ts#".toRegex()
+        val processedId = if (timestampRegex.containsMatchIn(identifier)) timestampRegex.replace(identifier, reportDateTime) else identifier
+
+        val reportConfig = ReportConfig(
+                settings = settings,
+                histosDirectory = directory,
+                reportDirectory = reportDirectory,
+                extension = extension,
+                identifier = processedId,
+                classLimit = classLimit,
+                byteLimit = bytesLimit,
+                reportDateTime = reportDateTime)
+
+        try {
+            MemoryCheck().processHistos(reportConfig)
+        } catch (e : Exception) {
+            println("Error: ${e.message}")
+            e.printStackTrace()
+        }
     }
 
 }
@@ -45,30 +68,40 @@ class MemoryCheck {
     companion object {
         fun useZoneOffset(): ZoneId {
             // better make this configurable
-            return ZoneId.of("Europe/Amsterdam")
+            return ZoneId.systemDefault()
         }
     }
 
-    fun processHistos(directory: String, extension: String, reportConfig: ReportConfig) {
-        val dir = File(directory)
+    fun processHistos(reportConfig: ReportConfig) {
+
+        val dir = File(reportConfig.histosDirectory)
         if (!dir.isDirectory) {
-            throw MemoryCheckException("This is not a directory: $directory")
+            throw MemoryCheckException("This is not a directory: ${dir.absoluteFile}")
+        }
+        val reportDir = File(reportConfig.reportDirectory)
+        if (!reportDir.exists()) {
+            println("Info: creating non-existent report directory: ${reportDir.absoluteFile}")
+            reportDir.mkdirs()
+        }
+        if (!reportDir.canWrite()) {
+            throw MemoryCheckException("Cannot write to report directory: ${reportDir.absoluteFile}")
         }
 
         val files = (dir.listFiles() ?: emptyArray()).asList()
-                .filter { file -> file.extension.equals(extension) }
-                .filter { file -> file.name.contains("histo") }
+                .filter { file -> file.extension.equals(reportConfig.extension) }
                 .sorted()
                 .toList()
 
         println("\nChecking files: ")
         files.forEach { println(it) }
 
-        val readHistos = HistoReader().readHistos(files)
+        val readHistos = HistoReader.readHistos(files)
 
-        val analysis = HistoAnalyser().analyse(readHistos)
+        val analysis = HistoAnalyser.analyse(readHistos)
 
-        TextReport().report(readHistos, analysis, reportConfig)
-
+        val reportData = ReportAnalyser.createHeapHistogramDumpReport(analysis, reportConfig)
+        JsonReport.report(reportData)
+        TextReport.report(readHistos, reportData)
+        HtmlGraphCreator.writeHtmlGoogleGraphFile(reportData)
     }
 }

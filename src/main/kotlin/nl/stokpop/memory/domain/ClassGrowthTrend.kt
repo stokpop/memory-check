@@ -16,11 +16,16 @@
 package nl.stokpop.memory.domain
 
 data class ClassGrowthTrend(
-    val data: Map<ClassName, ClassGrowth>
+        val timestamps: List<Long>,
+        val data: Map<ClassName, ClassGrowth>
 ) {
     fun statusCount(
-        status: AnalysisResult
-    ) = data.values.filter { it.analysisResult == status }.count()
+        status: AnalysisResult,
+        bytesLimit: Long
+    ) = data.values
+            .filter { it.analysisResult == status }
+            .filter { it.histoLines.last().bytes ?: 0 > bytesLimit }
+            .count()
 
     fun statusFilter(
         status: AnalysisResult

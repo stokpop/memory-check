@@ -16,8 +16,8 @@
 package nl.stokpop.memory
 
 import nl.stokpop.memory.domain.ClassName
-import nl.stokpop.memory.domain.HistoInfo
-import nl.stokpop.memory.domain.HistoLine
+import nl.stokpop.memory.domain.HeapHistogramDump
+import nl.stokpop.memory.domain.HeapHistogramDumpLine
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
@@ -25,18 +25,28 @@ import java.nio.file.attribute.BasicFileAttributes
 import java.time.Instant
 import java.time.LocalDateTime
 
-class HistoReader {
+object HistoReader {
 
-    fun readHistos(histoFiles: List<File>): List<HistoInfo> {
+    val isoDateRegex = """\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?""".toRegex()
+
+    fun readHistos(histoFiles: List<File>): List<HeapHistogramDump> {
         return histoFiles
-            .map { HistoInfo(it, dateForHistoFile(it), readHisto(it)) }
+            .map {
+                val dumpDate = dateForHistoFile(it)
+                HeapHistogramDump(it, dumpDate, readHisto(it)) }
             .toList()
     }
 
     /**
      * Now uses file creation date. We might also parse filename for a date.
+     * Filename should contain an ISO formatted date like: 2020-06-17T22:25:38.960921
      */
     private fun dateForHistoFile(file: File): LocalDateTime {
+        return extractDate(file.name) ?: dateForHistoFileFromAttrinutes(file)
+    }
+
+    private fun dateForHistoFileFromAttrinutes(file: File): LocalDateTime {
+        println("Unable to parse date time from filename: ${file.name}, will now use file creation date.")
         return try {
             val attr =
                     Files.readAttributes(file.toPath(), BasicFileAttributes::class.java)
@@ -48,7 +58,7 @@ class HistoReader {
         }
     }
 
-    private fun readHisto(file: File) : List<HistoLine> {
+    private fun readHisto(file: File) : List<HeapHistogramDumpLine> {
         return file.useLines { line ->
             line.map { it.trim() }
                     .filter { it.contains(':') } // very basic check for lines to parse...
@@ -57,11 +67,11 @@ class HistoReader {
         }
     }
 
-    private fun createHistoLine(line: String): HistoLine {
+    private fun createHistoLine(line: String): HeapHistogramDumpLine {
         val split = line.split("\\s+".toRegex())
         // 5 elements can be found in java 9+ dumps with packages, example:
         //    4:         88508        2124192  java.lang.String (java.base@11.0.6)
-        // the package is ignored
+        // the module is ignored
         if (!(split.size == 4 || split.size == 5)) {
             throw InvalidHistoLineException("Cannot read histo line (${split.size} elements, 4 or 5 expected): '$line' and '$split'")
         }
@@ -69,8 +79,16 @@ class HistoReader {
         val instances = split[1]
         val bytes = split[2]
         val name = split[3]
-        return HistoLine(ClassName(name), num.toLong(), instances.toLong(), bytes.toLong())
+        return HeapHistogramDumpLine(className = ClassName(name), num = num.toLong(), instances = instances.toLong(), bytes = bytes.toLong())
     }
 
     private fun skipLastCharacter(s: String) = s.substring(0, s.length - 1)
+
+    fun extractDate(s: String): LocalDateTime? {
+        if (isoDateRegex.containsMatchIn(s)) {
+            val dateString = isoDateRegex.find(s)?.value
+            return LocalDateTime.parse(dateString)
+        }
+        return null
+    }
 }
