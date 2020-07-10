@@ -22,9 +22,11 @@ import java.io.File
 
 object JsonReport {
 
-    fun report(data: HeapHistogramDumpReport) {
+    fun report(data: HeapHistogramDumpReport): File {
         val json = Json(JsonConfiguration.Stable)
         val jsonString = json.stringify(HeapHistogramDumpReport.serializer(), data)
-        File(data.reportConfig.reportDirectory,"heapHistogramDumpReport-${data.reportConfig.identifier}.json").writeText(jsonString)
+        val file = File(data.reportConfig.reportDirectory, "heapHistogramDumpReport-${data.reportConfig.identifier}.json")
+        file.writeText(jsonString)
+        return file
     }
 }

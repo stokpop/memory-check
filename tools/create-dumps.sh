@@ -14,6 +14,6 @@ PID=$(jps | grep $APP_NAME | cut -d' ' -f1)
 
 for i in $(seq 1 $TIMES)
 do
-    jmap -histo:live $PID > histo.dump.$APP_NAME.$(date +%Y%m%d.%H%M%S).txt
+    jmap -histo:live $PID > histo.dump.$APP_NAME.$(date +%Y-%m-%dT%H:%M:%S).txt
     sleep $DELAY_SEC
 done

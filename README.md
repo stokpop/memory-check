@@ -6,17 +6,54 @@ Read multiple memory histograms from Java and report on possible memory leaks.
 
 Run and provide a directory with histogram dumps and the file extension used
 
-    java -jar memory-check-exec.jar /path/to/histo-dumps histo
+    java -jar memory-check-exec.jar -d /path/to/histo-dumps -e histo
 
 Optionally a settings argument, consisting of comma separated list of 
 `grow,shrink,unknown,stable`. This determines which categories to report.
-Default is `grow`.
+Default is `-s grow`.
+
+For help:
+
+    java -jar build/libs/memory-check-exec-1.1.0.jar -help
+    Usage: memory-check-cli [OPTIONS]
     
+    Options:
+      -d, --dir TEXT         Look in this directory for heap histogram dumps.
+      -e, --ext TEXT         Only process files with this extension, example:
+                             'histo'
+      -i, --id TEXT          Identifier for the report, example: 'test-run-1234'.
+                             Include #ts# for a timestamp.
+      -r, --report-dir TEXT  Full or relative path to directory for the reports,
+                             example: '.' for current directory
+      -c, --class-limit INT  Report only the top 'limit' classes, example: '128'.
+      -b, --bytes-limit INT  Report class only when last dump has at least x
+                             bytes, example: '2048'
+      -s, --settings TEXT    Comma separated file with categories to report:
+                             grow,shrink,unknown,stable. Default: 'grow'
+      -h, --help             Show this message and exit
+
+Example call:
+
+    java -jar memory-check-exec.jar -d /Users/stokpop/afterburner-run-2 -e histo -i test-run-123-#ts# -r . -c 256 -b 1000 -s grow,shrink,unknown
+    
+# Reports
+
+The memory-check will create a text output on standard out and a json and html report.
+Use the `id` option to give the reports a custom name. Use the `report-dir` option to save 
+it in another location.
+
+The html report show graphs of bytes and instances in use over time. 
+
+In the diff (difference) charts you can find leaks if the graph line stays above the zero line, 
+meaning that objects are created but not removed.
+
+![screen shot of bytes-diff graph](images/bytes-diff-mem-leak-example-highlites.png?raw=true "bytes-diff graph")
+
 # Generate histogram dump
 
 Use the following command to dump the live objects of a java process.
 
-    jmap -histo:live $JAVA_PID > memory-dump-$(date +%Y%m%d.%H%M%S).histo
+    jmap -histo:live $JAVA_PID > memory-dump-$(date +%Y-%m-%dT%H:%M:%S).histo
     
 Generate 4 dumps with 10 seconds apart for application-name:
 
@@ -24,12 +61,24 @@ Generate 4 dumps with 10 seconds apart for application-name:
     
 Generate histogram via jmx:
 
-    java -cp memory-check-exec.jar nl.stokpop.jmx.FetchHistogramKt localhost 5000
-
-# Build executable jar
-
-    ./gradlew fatJar
+    java -cp memory-check-exec.jar nl.stokpop.jmx.FetchHistogramKt localhost 5000 > memory-dump-$(date +%Y-%m-%dT%H:%M:%S).histo
     
+Enable jmx on your java process by adding these jvm options:
+
+    -Dcom.sun.management.jmxremote.port=5000
+    -Dcom.sun.management.jmxremote.ssl=false
+    -Dcom.sun.management.jmxremote.authenticate=false
+
+Make sure there is a timestamp in the dump filename that memory-check can use to determine the 
+time of the dump. If not found in the filename it will try to use the creation date file attribute,
+but that might not always be correct, for example after a file copy. Use the following format:
+
+    yyyy-MM-ddTHH:mm:ss(.SSS)
+
+Optionally you can also add milliseconds/nanoseconds for better precision. Example filename:
+
+    memory-dump-2020-06-17T17:52:32.433463.histo
+        
 # Example output
 
     Number of GROW 12
@@ -50,3 +99,9 @@ Generate histogram via jmx:
     java.util.Random instances: [10413, 10923, 11442, 11952] diff: [510, 519, 510] size: [325.4 KB, 341.3 KB, 357.6 KB, 373.5 KB] diff: [15.9 KB, 16.2 KB, 15.9 KB]
     java.util.concurrent.atomic.AtomicLong instances: [10475, 10985, 11504, 12014] diff: [510, 519, 510] size: [245.5 KB, 257.5 KB, 269.6 KB, 281.6 KB] diff: [12.0 KB, 12.2 KB, 12.0 KB]
     nl.stokpop.afterburner.domain.BigFatBastard instances: [10410, 10920, 11439, 11949] diff: [510, 519, 510] size: [244.0 KB, 255.9 KB, 268.1 KB, 280.1 KB] diff: [12.0 KB, 12.2 KB, 12.0 KB]
+    
+# Build executable jar
+
+If you want to build an executable jar yourself use:
+
+    ./gradlew clean fatJar

@@ -121,9 +121,10 @@ object HtmlGraphCreator {
   </head>
   <body>
     <div style="margin: 5%">
-    <h1>Heap Histogram Dumps Analysis</h1>
+    <h1>Stokpop Memory Check</h2>
+    <h2>Heap Histogram Dumps Analysis</h2>
     ###ANALYSIS-RESULT-SUMMARY###
-    <h1>Heap Histogram Dumps Charts</h1>
+    <h2>Heap Histogram Dumps Charts</h2>
     </div>
     <div id="chart_div_bytes" style="width: 96%; min-height: 800px; height: 50%; margin-left: auto; margin-right: auto"></div>
     <div id="chart_div_bytes_diff" style="width: 96%; min-height: 800px; height: 50%; margin-left: auto; margin-right: auto"></div>
@@ -132,7 +133,7 @@ object HtmlGraphCreator {
   </body>
 </html>"""
 
-    fun writeHtmlGoogleGraphFile(data: HeapHistogramDumpReport) {
+    fun writeHtmlGoogleGraphFile(data: HeapHistogramDumpReport): File {
         val title = data.reportConfig.identifier
         val timestamps = data.heapHistogramDumpDetails.timestamps
 
@@ -150,7 +151,9 @@ object HtmlGraphCreator {
             template = createInstancesTable(title, timestamps, data.heapHistogramDumpDetails.classHistogramDetails, template, classLimit)
             template = createInstancesTableDiff(title, timestamps, data.heapHistogramDumpDetails.classHistogramDetails, template, classLimit)
         }
-        File("heapHistogramDumpReport-$title.html").writeText(template)
+        val file = File(data.reportConfig.reportDirectory, "heapHistogramDumpReport-$title.html")
+        file.writeText(template)
+        return file
     }
 
     private fun analysisResultTable(data: HeapHistogramDumpReport): String {

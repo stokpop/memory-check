@@ -92,16 +92,18 @@ class MemoryCheck {
                 .sorted()
                 .toList()
 
-        println("\nChecking files: ")
-        files.forEach { println(it) }
+        System.err.println("\nChecking files: ")
+        files.forEach { System.err.println(it) }
 
         val readHistos = HistoReader.readHistos(files)
 
         val analysis = HistoAnalyser.analyse(readHistos)
 
         val reportData = ReportAnalyser.createHeapHistogramDumpReport(analysis, reportConfig)
-        JsonReport.report(reportData)
         TextReport.report(readHistos, reportData)
-        HtmlGraphCreator.writeHtmlGoogleGraphFile(reportData)
+        val jsonReportFile = JsonReport.report(reportData)
+        val htmlReportFile = HtmlGraphCreator.writeHtmlGoogleGraphFile(reportData)
+        println("json report: ${jsonReportFile.absoluteFile}")
+        println("html report: ${htmlReportFile.absoluteFile}")
     }
 }

@@ -48,28 +48,30 @@ object TextReport {
         val details = data.heapHistogramDumpDetails.classHistogramDetails.asSequence()
 
         if (data.reportConfig.doReportGrow) {
-            println("\nFound possible memory leaks:")
+            println("\n\nFound possible memory leaks:")
             details.filter { it.analysis == AnalysisResult.GROW }
                     .forEach { reportLine(it) }
         }
 
         if (data.reportConfig.doReportShrinks) {
-            println("\nFound shrinks:")
+            println("\n\nFound shrinks:")
             details.filter { it.analysis == AnalysisResult.SHRINK }
                     .forEach { reportLine(it) }
         }
 
         if (data.reportConfig.doReportUnknowns) {
-            println("\nFound unknowns:")
+            println("\n\nFound unknowns:")
             details.filter { it.analysis == AnalysisResult.UNKNOWN }
                     .forEach { reportLine(it) }
         }
 
         if (data.reportConfig.doReportStable) {
-            println("\nFound stable:")
+            println("\n\nFound stable:")
             details.filter { it.analysis == AnalysisResult.STABLE }
                     .forEach { reportLine(it) }
         }
+
+        println("\n")
     }
 
     fun reportLine(details: ClassHistogramDetails) {
