@@ -2,7 +2,7 @@ import org.gradle.jvm.tasks.Jar
 import java.time.Year
 
 group = "nl.stokpop"
-version = "1.1.0"
+version = "1.1.1"
 description = "memory-check"
 
 plugins {

@@ -83,9 +83,9 @@ object HistoAnalyser {
 
         if (ghostCount == compareSize) return AnalysisResult.UNKNOWN
 
-        if (growthCount + ghostCount == compareSize && !lastIsGhost) return AnalysisResult.GROW
+        if (growthCount > 0 && growthCount + ghostCount + stableCount == compareSize && !lastIsGhost) return AnalysisResult.GROW
         if (growthCount + ghostCount == compareSize && lastIsGhost) return AnalysisResult.UNKNOWN
-        if (shrinkCount + ghostCount == compareSize) return AnalysisResult.SHRINK
+        if (shrinkCount > 0 && shrinkCount + ghostCount + stableCount == compareSize) return AnalysisResult.SHRINK
         if (stableCount + ghostCount == compareSize) return AnalysisResult.STABLE
 
         return AnalysisResult.UNKNOWN
