@@ -1,6 +1,6 @@
 # Stokpop Memory Check
 
-Read multiple memory histograms from Java and report on possible memory leaks.
+Read multiple memory histograms from Java and report on possible memory leaks. Sponsored by Rabobank.
 
 # Usage
 
