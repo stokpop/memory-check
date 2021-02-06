@@ -16,15 +16,13 @@
 package nl.stokpop.memory.report
 
 import kotlinx.serialization.json.Json
-import kotlinx.serialization.json.JsonConfiguration
 import nl.stokpop.memory.domain.json.HeapHistogramDumpReport
 import java.io.File
 
 object JsonReport {
 
     fun report(data: HeapHistogramDumpReport): File {
-        val json = Json(JsonConfiguration.Stable)
-        val jsonString = json.stringify(HeapHistogramDumpReport.serializer(), data)
+        val jsonString = Json.encodeToString(HeapHistogramDumpReport.serializer(), data)
         val file = File(data.reportConfig.reportDirectory, "heapHistogramDumpReport-${data.reportConfig.identifier}.json")
         file.writeText(jsonString)
         return file

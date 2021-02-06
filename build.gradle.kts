@@ -6,10 +6,13 @@ version = "1.1.1"
 description = "memory-check"
 
 plugins {
-    id("org.jetbrains.kotlin.jvm") version "1.3.72"
-    kotlin("plugin.serialization") version "1.3.72"
+    id("org.jetbrains.kotlin.jvm") version "1.4.30"
+    kotlin("plugin.serialization") version "1.4.30"
+    id("org.jetbrains.dokka") version "1.4.20"
     id("com.github.hierynomus.license") version "0.15.0"
-    id("com.vanniktech.maven.publish") version "0.11.1"
+    id("com.vanniktech.maven.publish") version "0.13.0"
+    // check dependency updates: ./gradlew dependencyUpdates -Drevision=release
+    id("com.github.ben-manes.versions") version "0.36.0"
     application
 }
 
@@ -20,12 +23,12 @@ repositories {
 dependencies {
     implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime:0.20.0")
-    implementation("com.github.ajalt:clikt:2.7.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime:1.0-M1-1.4.0-rc-218")
+    implementation("com.github.ajalt.clikt:clikt:3.1.0")
     testImplementation("org.jetbrains.kotlin:kotlin-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit")
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.6.2")
-    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.6.2")
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.7.1")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.7.1")
 }
 
 tasks.test {
