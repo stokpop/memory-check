@@ -15,4 +15,4 @@
  */
 package nl.stokpop.memory.domain
 
-data class ClassName(val name: String)
+data class ClassName(val name: String, val isSafeToGrow: Boolean = false)

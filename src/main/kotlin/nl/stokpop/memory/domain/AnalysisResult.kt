@@ -15,6 +15,11 @@
  */
 package nl.stokpop.memory.domain
 
-enum class AnalysisResult {
-    GROW, STABLE, SHRINK, UNKNOWN
+enum class AnalysisResult(val description: String) {
+    GROW_CRITICAL("critical growth detected (above critical threshold)"),
+    GROW_MINOR("minor growth detected (below critical threshold)"),
+    GROW_SAFE("growth detected in white list of known growing classes"),
+    STABLE("no growth detected"),
+    SHRINK("opposite of growth detected, might indicate reduction in load"),
+    UNKNOWN("both growth and shrink detected")
 }

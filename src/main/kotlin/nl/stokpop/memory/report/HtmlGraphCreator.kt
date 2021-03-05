@@ -26,7 +26,9 @@ import java.io.File
  */
 object HtmlGraphCreator {
 
-    private var arrowUp = '\u2191'
+    private var arrowUpCritical = '\u25b2'
+    private var arrowUpMinor = '\u21e7'
+    private var arrowUpSafe = '\u2191'
     private var arrowUpDown = '\u2195'
     private var arrowDown = '\u2193'
     private var arrowFlat = '\u2194'
@@ -168,6 +170,7 @@ object HtmlGraphCreator {
         html.append("<tr><td>Report settings</td><td><b>${data.reportConfig.settings}</b></td></tr>").append("\n")
         html.append("<tr><td>Report class limit</td><td><b>${data.reportConfig.classLimit}</b></td></tr>").append("\n")
         html.append("<tr><td>Report byte limit</td><td><b>${HumanReadable.humanReadableMemorySize(data.reportConfig.byteLimit)}</b></td></tr>").append("\n")
+        html.append("<tr><td>Maximum allowed growth percentage</td><td><b>${data.reportConfig.maxGrowthPercentage} %</b></td></tr>").append("\n")
         html.append("<table>")
 
         html.append("<table>").append("\n")
@@ -185,8 +188,9 @@ object HtmlGraphCreator {
             detailsMapper: (ClassHistogramDetails) -> List<Long?>,
             limit: Int): String {
 
-        val table = StringBuilder()
+        val table = StringBuilder(2048)
 
+        // no colors in legend names 😔
         val classNames = data.take(limit).map { "${mapToUnicodeArrow(it.analysis)}$nonBreakSpace${it.className}" }.toList()
         val detailsList = data.take(limit).map(detailsMapper).toList()
         table.append("['Time'")
@@ -218,11 +222,25 @@ object HtmlGraphCreator {
 
     private fun mapToUnicodeArrow(analysis: AnalysisResult): Char {
         return when (analysis) {
-            AnalysisResult.GROW -> arrowUp
+            AnalysisResult.GROW_CRITICAL -> arrowUpCritical
+            AnalysisResult.GROW_MINOR -> arrowUpMinor
+            AnalysisResult.GROW_SAFE -> arrowUpSafe
             AnalysisResult.SHRINK -> arrowDown
             AnalysisResult.STABLE -> arrowFlat
             AnalysisResult.UNKNOWN -> arrowUpDown
         }
+    }
+
+    private fun mapToColorUnicodeArrow(analysis: AnalysisResult): String {
+        val color = when (analysis) {
+            AnalysisResult.GROW_CRITICAL -> "red"
+            AnalysisResult.GROW_MINOR -> "orange"
+            AnalysisResult.GROW_SAFE -> "green"
+            AnalysisResult.SHRINK -> "black"
+            AnalysisResult.STABLE -> "black"
+            AnalysisResult.UNKNOWN -> "gray"
+        }
+        return "<div style='color:$color'>${mapToUnicodeArrow(analysis)}</div>"
     }
 
     private fun createBytesTable(title: String, timestamps: List<Long?>, data: List<ClassHistogramDetails>, template: String, classLimit: Int): String {

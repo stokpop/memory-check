@@ -32,14 +32,18 @@ object ReportAnalyser {
         val heapHistogramDumpSummary = HeapHistogramDumpSummary(analysisResultToCount)
 
         val leakResult = when {
-            (heapHistogramDumpSummary.data.get(AnalysisResult.GROW) ?: 0) > 0 -> AnalysisResult.GROW
+            (heapHistogramDumpSummary.data.get(AnalysisResult.GROW_CRITICAL) ?: 0) > 0 -> AnalysisResult.GROW_CRITICAL
+            (heapHistogramDumpSummary.data.get(AnalysisResult.GROW_MINOR) ?: 0) > 0 -> AnalysisResult.GROW_MINOR
+            (heapHistogramDumpSummary.data.get(AnalysisResult.GROW_SAFE) ?: 0) > 0 -> AnalysisResult.GROW_SAFE
             (heapHistogramDumpSummary.data.get(AnalysisResult.SHRINK) ?: 0) > 0 -> AnalysisResult.SHRINK
             (heapHistogramDumpSummary.data.get(AnalysisResult.STABLE) ?: 0) > 0 -> AnalysisResult.STABLE
             else -> AnalysisResult.UNKNOWN
         }
 
         val analysisFilter: (Map.Entry<ClassName, ClassGrowth>) -> Boolean = {
-            (reportConfig.doReportGrow && it.value.analysisResult == AnalysisResult.GROW)
+            (reportConfig.doReportGrowCritical && it.value.analysisResult == AnalysisResult.GROW_CRITICAL)
+                    || (reportConfig.doReportGrowMinor && it.value.analysisResult == AnalysisResult.GROW_MINOR)
+                    || (reportConfig.doReportGrowSafe && it.value.analysisResult == AnalysisResult.GROW_SAFE)
                     || (reportConfig.doReportShrinks && it.value.analysisResult == AnalysisResult.SHRINK)
                     || (reportConfig.doReportStable && it.value.analysisResult == AnalysisResult.STABLE)
                     || (reportConfig.doReportUnknowns && it.value.analysisResult == AnalysisResult.UNKNOWN)}

@@ -16,7 +16,7 @@
 package nl.stokpop.memory.report
 
 import nl.stokpop.memory.HumanReadable
-import nl.stokpop.memory.domain.AnalysisResult
+import nl.stokpop.memory.domain.AnalysisResult.*
 import nl.stokpop.memory.domain.HeapHistogramDump
 import nl.stokpop.memory.domain.json.ClassHistogramDetails
 import nl.stokpop.memory.domain.json.HeapHistogramDumpReport
@@ -38,36 +38,50 @@ object TextReport {
 
         histos.forEach { println("File: '${it.histoFile.name}' with date ${it.timestamp.format(DateTimeFormatter.ISO_DATE_TIME)}") }
 
-        println("\nNumber of GROW ${data.heapHistogramDumpSummary.data.get(AnalysisResult.GROW)}")
-        println("Number of STABLE ${data.heapHistogramDumpSummary.data.get(AnalysisResult.STABLE)}")
-        println("Number of SHRINK ${data.heapHistogramDumpSummary.data.get(AnalysisResult.SHRINK)}")
-        println("Number of UNKNOWN ${data.heapHistogramDumpSummary.data.get(AnalysisResult.UNKNOWN)}")
+        println("\nNumber of GROW_CRITICAL ${data.heapHistogramDumpSummary.data[GROW_CRITICAL]}")
+        println("Number of GROW_MINOR ${data.heapHistogramDumpSummary.data[GROW_MINOR]}")
+        println("Number of GROW_SAFE ${data.heapHistogramDumpSummary.data[GROW_SAFE]}")
+        println("Number of STABLE ${data.heapHistogramDumpSummary.data[STABLE]}")
+        println("Number of SHRINK ${data.heapHistogramDumpSummary.data[SHRINK]}")
+        println("Number of UNKNOWN ${data.heapHistogramDumpSummary.data[UNKNOWN]}")
 
         println("\nBelow only results are printed that have remaining size of at least ${HumanReadable.humanReadableMemorySize(minSizeInBytes)} in last histogram.")
 
         val details = data.heapHistogramDumpDetails.classHistogramDetails.asSequence()
 
-        if (data.reportConfig.doReportGrow) {
-            println("\n\nFound possible memory leaks:")
-            details.filter { it.analysis == AnalysisResult.GROW }
+        if (data.reportConfig.doReportGrowCritical) {
+            println("\n\nFound possible critical memory leaks:")
+            details.filter { it.analysis == GROW_CRITICAL }
                     .forEach { reportLine(it) }
+        }
+
+        if (data.reportConfig.doReportGrowMinor) {
+            println("\n\nFound possible minor memory leaks:")
+            details.filter { it.analysis == GROW_MINOR }
+                .forEach { reportLine(it) }
+        }
+
+        if (data.reportConfig.doReportGrowSafe) {
+            println("\n\nFound possible safe memory leaks:")
+            details.filter { it.analysis == GROW_SAFE }
+                .forEach { reportLine(it) }
         }
 
         if (data.reportConfig.doReportShrinks) {
             println("\n\nFound shrinks:")
-            details.filter { it.analysis == AnalysisResult.SHRINK }
+            details.filter { it.analysis == SHRINK }
                     .forEach { reportLine(it) }
         }
 
         if (data.reportConfig.doReportUnknowns) {
             println("\n\nFound unknowns:")
-            details.filter { it.analysis == AnalysisResult.UNKNOWN }
+            details.filter { it.analysis == UNKNOWN }
                     .forEach { reportLine(it) }
         }
 
         if (data.reportConfig.doReportStable) {
             println("\n\nFound stable:")
-            details.filter { it.analysis == AnalysisResult.STABLE }
+            details.filter { it.analysis == STABLE }
                     .forEach { reportLine(it) }
         }
 

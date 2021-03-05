@@ -17,22 +17,26 @@ package nl.stokpop.memory.report
 
 import kotlinx.serialization.Serializable
 import nl.stokpop.memory.domain.AnalysisResult
+import nl.stokpop.memory.domain.AnalysisResult.*
 
 @Serializable
 class ReportConfig(
-        val settings: String,
+        val settings: Set<AnalysisResult>,
         val histosDirectory: String,
         val reportDirectory: String,
         val extension: String,
         val identifier: String,
         val reportDateTime: String,
         val classLimit: Int,
-        val byteLimit: Long) {
+        val byteLimit: Long,
+        val maxGrowthPercentage: Int,
+        val safeGrowSet: Set<String>) {
 
-    private val uppercaseSettings = settings.toUpperCase()
-    val doReportGrow = uppercaseSettings.contains(AnalysisResult.GROW.name)
-    val doReportUnknowns = uppercaseSettings.contains(AnalysisResult.UNKNOWN.name)
-    val doReportShrinks = uppercaseSettings.contains(AnalysisResult.SHRINK.name)
-    val doReportStable  = uppercaseSettings.contains(AnalysisResult.STABLE.name)
+    val doReportGrowCritical = settings.contains(GROW_CRITICAL)
+    val doReportGrowMinor = settings.contains(GROW_MINOR)
+    val doReportGrowSafe = settings.contains(GROW_SAFE)
+    val doReportUnknowns = settings.contains(UNKNOWN)
+    val doReportShrinks = settings.contains(SHRINK)
+    val doReportStable  = settings.contains(STABLE)
 
 }

@@ -18,6 +18,7 @@ package nl.stokpop.memory
 import nl.stokpop.memory.domain.ClassName
 import nl.stokpop.memory.domain.HeapHistogramDump
 import nl.stokpop.memory.domain.HeapHistogramDumpLine
+import nl.stokpop.memory.domain.SafeGrowSet
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
@@ -29,11 +30,11 @@ object HistoReader {
 
     val isoDateRegex = """\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?""".toRegex()
 
-    fun readHistos(histoFiles: List<File>): List<HeapHistogramDump> {
+    fun readHistos(histoFiles: List<File>, safeGrowList: SafeGrowSet): List<HeapHistogramDump> {
         return histoFiles
             .map {
                 val dumpDate = dateForHistoFile(it)
-                HeapHistogramDump(it, dumpDate, readHisto(it)) }
+                HeapHistogramDump(it, dumpDate, readHisto(it, safeGrowList)) }
             .toList()
     }
 
@@ -58,16 +59,16 @@ object HistoReader {
         }
     }
 
-    private fun readHisto(file: File) : List<HeapHistogramDumpLine> {
+    private fun readHisto(file: File, safeGrowSet: SafeGrowSet) : List<HeapHistogramDumpLine> {
         return file.useLines { line ->
             line.map { it.trim() }
                     .filter { it.contains(':') } // very basic check for lines to parse...
-                    .map { createHistoLine(it) }
+                    .map { createHistoLine(it, safeGrowSet) }
                     .toList()
         }
     }
 
-    private fun createHistoLine(line: String): HeapHistogramDumpLine {
+    private fun createHistoLine(line: String, safeGrowSet: SafeGrowSet): HeapHistogramDumpLine {
         val split = line.split("\\s+".toRegex())
         // 5 elements can be found in java 9+ dumps with packages, example:
         //    4:         88508        2124192  java.lang.String (java.base@11.0.6)
@@ -79,7 +80,7 @@ object HistoReader {
         val instances = split[1]
         val bytes = split[2]
         val name = split[3]
-        return HeapHistogramDumpLine(className = ClassName(name), num = num.toLong(), instances = instances.toLong(), bytes = bytes.toLong())
+        return HeapHistogramDumpLine(className = ClassName(name, safeGrowSet.isSafeToGrow(name)), num = num.toLong(), instances = instances.toLong(), bytes = bytes.toLong())
     }
 
     private fun skipLastCharacter(s: String) = s.substring(0, s.length - 1)

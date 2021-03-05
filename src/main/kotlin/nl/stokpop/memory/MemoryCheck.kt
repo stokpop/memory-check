@@ -20,6 +20,8 @@ import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.int
 import com.github.ajalt.clikt.parameters.types.long
+import nl.stokpop.memory.domain.AnalysisResult
+import nl.stokpop.memory.domain.SafeGrowSet
 import nl.stokpop.memory.report.*
 import java.io.File
 import java.time.LocalDateTime
@@ -35,7 +37,9 @@ class MemoryCheckCli : CliktCommand() {
     val reportDirectory: String by option("-r", "--report-dir", help = "Full or relative path to directory for the reports, example: '.' for current directory").default(".")
     val classLimit: Int by option("-c", "--class-limit", help = "Report only the top 'limit' classes, example: '128'.").int().default(128)
     val bytesLimit: Long by option("-b", "--bytes-limit", help = "Report class only when last dump has at least x bytes, example: '2048'").long().default(2048)
-    val settings: String by option("-s", "--settings", help = "Comma separated file with categories to report: grow,shrink,unknown,stable. Default: 'grow'").default("grow")
+    val settings: String by option("-s", "--settings", help = "Comma separated file with categories to report: grow_critical,grow_minor,grow_safe,shrink,unknown,stable. Default: 'grow_critical,grow_minor'").default("grow_critical,grow_minor")
+    val maxGrowthPercentage: Int by option("-p", "--max-growth-percentage", help = "Maximum allowed growth in percentage before reporting a critical growth. Default: 5").int().default(5)
+    val safeGrowList: String by option("-sgl", "--safe-grow-list", help = "Comma separated list of fully qualified classnames that are 'safe to growth'. The asterisk (*) can be used as wildcard. Default: \"\"").default("")
 
     override fun run() {
         val reportDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"))
@@ -43,21 +47,42 @@ class MemoryCheckCli : CliktCommand() {
         val timestampRegex = "#ts#".toRegex()
         val processedId = if (timestampRegex.containsMatchIn(identifier)) timestampRegex.replace(identifier, reportDateTime) else identifier
 
+        val reportSettings = settings.split(',')
+            .map { s -> s.toUpperCase() }
+            .mapNotNull { s -> parseAnalysisResult(s) }
+            .toSet()
+
+        val safeGrowSet = HashSet(safeGrowList.split(","))
+
         val reportConfig = ReportConfig(
-                settings = settings,
+                settings = reportSettings,
                 histosDirectory = directory,
                 reportDirectory = reportDirectory,
                 extension = extension,
                 identifier = processedId,
                 classLimit = classLimit,
                 byteLimit = bytesLimit,
-                reportDateTime = reportDateTime)
+                reportDateTime = reportDateTime,
+                maxGrowthPercentage = maxGrowthPercentage,
+                safeGrowSet = safeGrowSet)
 
         try {
             MemoryCheck().processHistos(reportConfig)
         } catch (e : Exception) {
             println("Error: ${e.message}")
             e.printStackTrace()
+        }
+    }
+
+    /**
+     * Returns null when an unknown analysis result is given. Prints message to std error.
+     */
+    private fun parseAnalysisResult(analysisResultAsString: String): AnalysisResult? {
+        return try {
+            AnalysisResult.valueOf(analysisResultAsString)
+        } catch (e: java.lang.IllegalArgumentException) {
+            System.err.println("Unknown analysis result in settings: $analysisResultAsString")
+            return null
         }
     }
 
@@ -88,16 +113,16 @@ class MemoryCheck {
         }
 
         val files = (dir.listFiles() ?: emptyArray()).asList()
-                .filter { file -> file.extension.equals(reportConfig.extension) }
+                .filter { file -> file.extension == reportConfig.extension }
                 .sorted()
                 .toList()
 
         System.err.println("\nChecking files: ")
         files.forEach { System.err.println(it) }
 
-        val readHistos = HistoReader.readHistos(files)
+        val readHistos = HistoReader.readHistos(files, SafeGrowSet(reportConfig.safeGrowSet))
 
-        val analysis = HistoAnalyser.analyse(readHistos)
+        val analysis = HistoAnalyser.analyse(readHistos, reportConfig)
 
         val reportData = ReportAnalyser.createHeapHistogramDumpReport(analysis, reportConfig)
         TextReport.report(readHistos, reportData)

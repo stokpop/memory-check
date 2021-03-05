@@ -16,18 +16,21 @@
 package nl.stokpop.memory
 
 import nl.stokpop.memory.domain.*
+import nl.stokpop.memory.domain.AnalysisResult.*
 import nl.stokpop.memory.domain.HeapHistogramDumpLine.Companion.createGhostLine
+import nl.stokpop.memory.report.ReportConfig
 
 object HistoAnalyser {
-    fun analyse(histos: List<HeapHistogramDump>): ClassGrowthTrend {
-        if (histos.isEmpty()) return ClassGrowthTrend(emptyList(), emptyMap())
+
+    fun analyse(dumps: List<HeapHistogramDump>, config: ReportConfig): ClassGrowthTrend {
+        if (dumps.isEmpty()) return ClassGrowthTrend(emptyList(), emptyMap())
 
         // what if new classes appear in new histos? create super set!
-        val classNames = histos.flatMap { it.findAllClassNames() }.toSet()
-        val timestamps = histos.map { it.timestamp.atZone(MemoryCheck.useZoneOffset()).toInstant().toEpochMilli() }.toList()
+        val classNames = dumps.flatMap { it.findAllClassNames() }.toSet()
+        val timestamps = dumps.map { it.timestamp.atZone(MemoryCheck.useZoneOffset()).toInstant().toEpochMilli() }.toList()
         // sort on number of bytes in last heap histogram dump, reverse() -> biggest first
         val data = classNames
-                .map { it to processClassNameForHistoInfos(it, histos) }
+                .map { className -> className to processClassNameForHistoInfos(className, dumps, config) }
                 .toList()
                 .sortedBy { (_, value) -> value.histoLines.last().bytes }
                 .reversed()
@@ -35,25 +38,28 @@ object HistoAnalyser {
         return ClassGrowthTrend(timestamps, data)
     }
 
-    private fun processClassNameForHistoInfos(name: ClassName, histos: List<HeapHistogramDump>): ClassGrowth {
-        val histosForClassName = histos
-            .map { it.histogram.firstOrNull { name == it.className } ?: createGhostLine(name) }
+    private fun processClassNameForHistoInfos(name: ClassName, dumps: List<HeapHistogramDump>, config: ReportConfig): ClassGrowth {
+        val histosForClassName = dumps
+            .map { dump -> dump.histogram.firstOrNull { name == it.className } ?: createGhostLine(name) }
             .toList()
-        return ClassGrowth(name, histosForClassName, analyseGrowth(histosForClassName) { it.bytes })
+        return ClassGrowth(name, histosForClassName, analyseGrowth(histosForClassName, name.isSafeToGrow, config.maxGrowthPercentage.toDouble()) { it.bytes })
     }
 
     fun analyseGrowth(
-            histoLines: List<HeapHistogramDumpLine>,
-            thingToCheck: (HeapHistogramDumpLine) -> Long? = { it.instances }): AnalysisResult {
+        histoLines: List<HeapHistogramDumpLine>,
+        isSafeToGrow: Boolean = false,
+        maxGrowthPercentage: Double = 10.0,
+        thingToCheck: (HeapHistogramDumpLine) -> Long? = { it.instances }): AnalysisResult {
 
-        if (histoLines.isEmpty()) return AnalysisResult.UNKNOWN
+        if (histoLines.isEmpty()) return UNKNOWN
 
         val histoSize = histoLines.size
-        if (histoSize == 1) return AnalysisResult.UNKNOWN
+        if (histoSize == 1) return UNKNOWN
         val compareSize = histoSize - 1
 
         // assume the lines are ordered in time
-        var growthCount = 0
+        var growthCriticalCount = 0
+        var growthMinorCount = 0
         var shrinkCount = 0
         var stableCount = 0
         var ghostCount = 0
@@ -72,8 +78,10 @@ object HistoAnalyser {
             val currentValue = thingToCheck(line)!!
 
             if (lastValue != -1L) {
+                val percentageGrowth = 100 * ((currentValue - lastValue) / lastValue.toDouble())
                 when {
-                    lastValue < currentValue -> growthCount++
+                    lastValue < currentValue && percentageGrowth > maxGrowthPercentage -> growthCriticalCount++
+                    lastValue < currentValue && percentageGrowth <= maxGrowthPercentage -> growthMinorCount++
                     lastValue > currentValue -> shrinkCount++
                     else -> stableCount++
                 }
@@ -81,13 +89,21 @@ object HistoAnalyser {
             lastValue = currentValue
         }
 
-        if (ghostCount == compareSize) return AnalysisResult.UNKNOWN
+        if (ghostCount == compareSize) return UNKNOWN
 
-        if (growthCount > 0 && growthCount + ghostCount + stableCount == compareSize && !lastIsGhost) return AnalysisResult.GROW
-        if (growthCount + ghostCount == compareSize && lastIsGhost) return AnalysisResult.UNKNOWN
-        if (shrinkCount > 0 && shrinkCount + ghostCount + stableCount == compareSize) return AnalysisResult.SHRINK
-        if (stableCount + ghostCount == compareSize) return AnalysisResult.STABLE
+        val totalGrowthCount = growthCriticalCount + growthMinorCount
 
-        return AnalysisResult.UNKNOWN
+        if (growthCriticalCount > 0 && totalGrowthCount + ghostCount + stableCount == compareSize && !lastIsGhost) {
+            return if (isSafeToGrow) GROW_SAFE else GROW_CRITICAL
+        }
+        if (growthMinorCount > 0 && growthMinorCount + ghostCount + stableCount == compareSize && !lastIsGhost) {
+            return if (isSafeToGrow) GROW_SAFE else GROW_MINOR
+        }
+
+        if (totalGrowthCount + ghostCount == compareSize && lastIsGhost) return UNKNOWN
+        if (shrinkCount > 0 && shrinkCount + ghostCount + stableCount == compareSize) return SHRINK
+        if (stableCount + ghostCount == compareSize) return STABLE
+
+        return UNKNOWN
     }
 }

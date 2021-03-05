@@ -41,7 +41,17 @@ internal class HistoAnalyserTest {
                 HeapHistogramDumpLine(ClassName("abc"), 1, 1, 1),
                 HeapHistogramDumpLine(ClassName("abc"), 1, 2, 2)
         )
-        assertEquals(AnalysisResult.GROW, HistoAnalyser.analyseGrowth(histoLines))
+        assertEquals(AnalysisResult.GROW_CRITICAL, HistoAnalyser.analyseGrowth(histoLines))
+    }
+
+    @Test
+    fun analyseGrowthTwoElementGrowMinor() {
+        val histoLines = listOf(
+                HeapHistogramDumpLine(ClassName("abc"), 1, 10, 10),
+                HeapHistogramDumpLine(ClassName("abc"), 1, 12, 12)
+        )
+        // max allowed growth is 20%, it is 20% so growth minor expected
+        assertEquals(AnalysisResult.GROW_MINOR, HistoAnalyser.analyseGrowth(histoLines, maxGrowthPercentage = 20.0))
     }
 
     @Test
@@ -90,7 +100,7 @@ internal class HistoAnalyserTest {
                 HeapHistogramDumpLine.createGhostLine(ClassName("abc")),
                 HeapHistogramDumpLine(ClassName("abc"), 1, 2, 1)
         )
-        assertEquals(AnalysisResult.GROW, HistoAnalyser.analyseGrowth(histoLines))
+        assertEquals(AnalysisResult.GROW_CRITICAL, HistoAnalyser.analyseGrowth(histoLines))
     }
 
     @Test
