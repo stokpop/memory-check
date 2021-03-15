@@ -18,10 +18,12 @@ package nl.stokpop.memory
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.option
+import com.github.ajalt.clikt.parameters.types.double
 import com.github.ajalt.clikt.parameters.types.int
 import com.github.ajalt.clikt.parameters.types.long
 import nl.stokpop.memory.domain.AnalysisResult
-import nl.stokpop.memory.domain.SafeGrowSet
+import nl.stokpop.memory.domain.SafeList
+import nl.stokpop.memory.domain.WatchList
 import nl.stokpop.memory.report.*
 import java.io.File
 import java.time.LocalDateTime
@@ -38,8 +40,10 @@ class MemoryCheckCli : CliktCommand() {
     val classLimit: Int by option("-c", "--class-limit", help = "Report only the top 'limit' classes, example: '128'.").int().default(128)
     val bytesLimit: Long by option("-b", "--bytes-limit", help = "Report class only when last dump has at least x bytes, example: '2048'").long().default(2048)
     val settings: String by option("-s", "--settings", help = "Comma separated file with categories to report: grow_critical,grow_minor,grow_safe,shrink,unknown,stable. Default: 'grow_critical,grow_minor'").default("grow_critical,grow_minor")
-    val maxGrowthPercentage: Int by option("-p", "--max-growth-percentage", help = "Maximum allowed growth in percentage before reporting a critical growth. Default: 5").int().default(5)
-    val safeGrowList: String by option("-sgl", "--safe-grow-list", help = "Comma separated list of fully qualified classnames that are 'safe to growth'. The asterisk (*) can be used as wildcard. Default: \"\"").default("")
+    val maxGrowthPercentage: Double by option("-mgp", "--max-growth-percentage", help = "Maximum allowed growth in percentage before reporting a critical growth. Default: 5.0").double().default(5.0)
+    val minGrowthPointsPercentage: Double by option("-mgpp", "--min-growth-points-percentage", help = "Minimum percentage of growth points to be considered growth. Default: 50.0").double().default(50.0)
+    val safeList: String by option("-sl", "--safe-list", help = "Comma separated list of fully qualified classnames that are 'safe to growth'. The asterisk (*) can be used as wildcard. Default: \"\"").default("")
+    val watchList: String by option("-wl", "--watch-list", help = "Comma separated list of fully qualified classnames that are 'always watched' irrelevant of other settings. The asterisk (*) can be used as wildcard. Default: \"\"").default("")
 
     override fun run() {
         val reportDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm"))
@@ -52,7 +56,23 @@ class MemoryCheckCli : CliktCommand() {
             .mapNotNull { s -> parseAnalysisResult(s) }
             .toSet()
 
-        val safeGrowSet = HashSet(safeGrowList.split(","))
+        val safeGrowSet = HashSet(safeList.split(","))
+        val watchSet = HashSet(watchList.split(","))
+
+        val reportLimits = ReportLimits(
+            classLimit = classLimit,
+            byteLimit = bytesLimit,
+            maxGrowthPercentage = maxGrowthPercentage,
+            minGrowthPointsPercentage = minGrowthPointsPercentage,
+            safeList = safeGrowSet,
+            watchList = watchSet,
+            doReportGrowCritical = reportSettings.contains(AnalysisResult.GROW_CRITICAL),
+            doReportGrowMinor = reportSettings.contains(AnalysisResult.GROW_MINOR),
+            doReportGrowSafe = reportSettings.contains(AnalysisResult.GROW_SAFE),
+            doReportUnknowns = reportSettings.contains(AnalysisResult.UNKNOWN),
+            doReportShrinks = reportSettings.contains(AnalysisResult.SHRINK),
+            doReportStable  = reportSettings.contains(AnalysisResult.STABLE)
+        )
 
         val reportConfig = ReportConfig(
                 settings = reportSettings,
@@ -60,11 +80,9 @@ class MemoryCheckCli : CliktCommand() {
                 reportDirectory = reportDirectory,
                 extension = extension,
                 identifier = processedId,
-                classLimit = classLimit,
-                byteLimit = bytesLimit,
                 reportDateTime = reportDateTime,
-                maxGrowthPercentage = maxGrowthPercentage,
-                safeGrowSet = safeGrowSet)
+                reportLimits = reportLimits
+        )
 
         try {
             MemoryCheck().processHistos(reportConfig)
@@ -120,14 +138,15 @@ class MemoryCheck {
         System.err.println("\nChecking files: ")
         files.forEach { System.err.println(it) }
 
-        val readHistos = HistoReader.readHistos(files, SafeGrowSet(reportConfig.safeGrowSet))
+        val reportLimits = reportConfig.reportLimits
+        val readHistos = HistoReader.readHistos(files, SafeList(reportLimits.safeList), WatchList(reportLimits.watchList))
 
         val analysis = HistoAnalyser.analyse(readHistos, reportConfig)
 
-        val reportData = ReportAnalyser.createHeapHistogramDumpReport(analysis, reportConfig)
-        TextReport.report(readHistos, reportData)
-        val jsonReportFile = JsonReport.report(reportData)
-        val htmlReportFile = HtmlGraphCreator.writeHtmlGoogleGraphFile(reportData)
+        val reportData = ReportAnalyser.createHeapHistogramDumpReport(analysis, reportLimits)
+        TextReport.report(readHistos, reportData, reportConfig)
+        val jsonReportFile = JsonReport.report(reportData, reportConfig)
+        val htmlReportFile = HtmlGraphCreator.writeHtmlGoogleGraphFile(reportData, reportConfig)
         println("json report: ${jsonReportFile.absoluteFile}")
         println("html report: ${htmlReportFile.absoluteFile}")
     }

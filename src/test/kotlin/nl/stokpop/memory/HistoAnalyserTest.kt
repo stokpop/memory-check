@@ -16,7 +16,7 @@
 package nl.stokpop.memory
 
 import nl.stokpop.memory.domain.AnalysisResult
-import nl.stokpop.memory.domain.ClassName
+import nl.stokpop.memory.domain.ClassInfo
 import nl.stokpop.memory.domain.HeapHistogramDumpLine
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
@@ -31,15 +31,15 @@ internal class HistoAnalyserTest {
 
     @Test
     fun analyseGrowthOneElement() {
-        val histoLines = listOf(HeapHistogramDumpLine(ClassName("abc"), 1, 1, 1))
+        val histoLines = listOf(HeapHistogramDumpLine(ClassInfo("abc"), 1, 1, 1))
         assertEquals(AnalysisResult.UNKNOWN, HistoAnalyser.analyseGrowth(histoLines))
     }
 
     @Test
     fun analyseGrowthTwoElementGrow() {
         val histoLines = listOf(
-                HeapHistogramDumpLine(ClassName("abc"), 1, 1, 1),
-                HeapHistogramDumpLine(ClassName("abc"), 1, 2, 2)
+                HeapHistogramDumpLine(ClassInfo("abc"), 1, 1, 1),
+                HeapHistogramDumpLine(ClassInfo("abc"), 1, 2, 2)
         )
         assertEquals(AnalysisResult.GROW_CRITICAL, HistoAnalyser.analyseGrowth(histoLines))
     }
@@ -47,8 +47,8 @@ internal class HistoAnalyserTest {
     @Test
     fun analyseGrowthTwoElementGrowMinor() {
         val histoLines = listOf(
-                HeapHistogramDumpLine(ClassName("abc"), 1, 10, 10),
-                HeapHistogramDumpLine(ClassName("abc"), 1, 12, 12)
+                HeapHistogramDumpLine(ClassInfo("abc"), 1, 10, 10),
+                HeapHistogramDumpLine(ClassInfo("abc"), 1, 12, 12)
         )
         // max allowed growth is 20%, it is 20% so growth minor expected
         assertEquals(AnalysisResult.GROW_MINOR, HistoAnalyser.analyseGrowth(histoLines, maxGrowthPercentage = 20.0))
@@ -57,8 +57,8 @@ internal class HistoAnalyserTest {
     @Test
     fun analyseGrowthTwoElementStable() {
         val histoLines = listOf(
-                HeapHistogramDumpLine(ClassName("abc"), 1, 1, 1),
-                HeapHistogramDumpLine(ClassName("abc"), 1, 1, 1)
+                HeapHistogramDumpLine(ClassInfo("abc"), 1, 1, 1),
+                HeapHistogramDumpLine(ClassInfo("abc"), 1, 1, 1)
         )
         assertEquals(AnalysisResult.STABLE, HistoAnalyser.analyseGrowth(histoLines))
     }
@@ -66,8 +66,8 @@ internal class HistoAnalyserTest {
     @Test
     fun analyseGrowthTwoElementsShrink() {
         val histoLines = listOf(
-                HeapHistogramDumpLine(ClassName("abc"), 1, 2, 1),
-                HeapHistogramDumpLine(ClassName("abc"), 1, 1, 1)
+                HeapHistogramDumpLine(ClassInfo("abc"), 1, 2, 1),
+                HeapHistogramDumpLine(ClassInfo("abc"), 1, 1, 1)
         )
         assertEquals(AnalysisResult.SHRINK, HistoAnalyser.analyseGrowth(histoLines))
     }
@@ -75,9 +75,9 @@ internal class HistoAnalyserTest {
     @Test
     fun analyseGrowthThreeElementsUnknown() {
         val histoLines = listOf(
-                HeapHistogramDumpLine(ClassName("abc"), 1, 1, 1),
-                HeapHistogramDumpLine(ClassName("abc"), 1, 2, 1),
-                HeapHistogramDumpLine(ClassName("abc"), 1, 1, 1)
+                HeapHistogramDumpLine(ClassInfo("abc"), 1, 1, 1),
+                HeapHistogramDumpLine(ClassInfo("abc"), 1, 2, 1),
+                HeapHistogramDumpLine(ClassInfo("abc"), 1, 1, 1)
         )
         assertEquals(AnalysisResult.UNKNOWN, HistoAnalyser.analyseGrowth(histoLines))
     }
@@ -85,31 +85,29 @@ internal class HistoAnalyserTest {
     @Test
     fun analyseGrowthTwoElementsOneGhost() {
         val histoLines = listOf(
-                HeapHistogramDumpLine(ClassName("abc"), 1, 1, 1),
-                HeapHistogramDumpLine.createGhostLine(ClassName("abc"))
+                HeapHistogramDumpLine(ClassInfo("abc"), 1, 1, 1),
+                HeapHistogramDumpLine.createGhostLine(ClassInfo("abc"))
         )
         assertEquals(AnalysisResult.UNKNOWN, HistoAnalyser.analyseGrowth(histoLines))
     }
 
     @Test
     fun analyseGrowthThreeElementsOneGhostInMiddle() {
-        // should this be UNKNOWN? seems that there are no classes in middle histo, so
-        // no leak?
         val histoLines = listOf(
-                HeapHistogramDumpLine(ClassName("abc"), 1, 1, 1),
-                HeapHistogramDumpLine.createGhostLine(ClassName("abc")),
-                HeapHistogramDumpLine(ClassName("abc"), 1, 2, 1)
+                HeapHistogramDumpLine(ClassInfo("abc"), 1, 1, 1),
+                HeapHistogramDumpLine.createGhostLine(ClassInfo("abc")),
+                HeapHistogramDumpLine(ClassInfo("abc"), 1, 2, 1)
         )
-        assertEquals(AnalysisResult.GROW_CRITICAL, HistoAnalyser.analyseGrowth(histoLines))
+        assertEquals(AnalysisResult.UNKNOWN, HistoAnalyser.analyseGrowth(histoLines))
     }
 
     @Test
     fun analyseGrowthThreeElementsOneGhostInAtEnd() {
         // should this test fail? if we interpret that class in totally not there at last step: no leak?
         val histoLines = listOf(
-                HeapHistogramDumpLine(ClassName("abc"), 1, 1, 1),
-                HeapHistogramDumpLine(ClassName("abc"), 1, 2, 1),
-                HeapHistogramDumpLine.createGhostLine(ClassName("abc"))
+                HeapHistogramDumpLine(ClassInfo("abc"), 1, 1, 1),
+                HeapHistogramDumpLine(ClassInfo("abc"), 1, 2, 1),
+                HeapHistogramDumpLine.createGhostLine(ClassInfo("abc"))
         )
         assertEquals(AnalysisResult.UNKNOWN, HistoAnalyser.analyseGrowth(histoLines))
     }

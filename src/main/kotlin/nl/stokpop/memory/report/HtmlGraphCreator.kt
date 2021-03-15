@@ -135,8 +135,8 @@ object HtmlGraphCreator {
   </body>
 </html>"""
 
-    fun writeHtmlGoogleGraphFile(data: HeapHistogramDumpReport): File {
-        val title = data.reportConfig.identifier
+    fun writeHtmlGoogleGraphFile(data: HeapHistogramDumpReport, reportConfig: ReportConfig): File {
+        val title = reportConfig.identifier
         val timestamps = data.heapHistogramDumpDetails.timestamps
 
         var template = CHART_HTML_TEMPLATE
@@ -146,31 +146,37 @@ object HtmlGraphCreator {
             println(message)
             template = "<p>$message<p>"
         } else {
-            template = "###ANALYSIS-RESULT-SUMMARY###".toRegex().replace(template, analysisResultTable(data))
-            val classLimit = data.reportConfig.classLimit
-            template = createBytesTable(title, timestamps, data.heapHistogramDumpDetails.classHistogramDetails, template, classLimit)
-            template = createBytesTableDiff(title, timestamps, data.heapHistogramDumpDetails.classHistogramDetails, template, classLimit)
-            template = createInstancesTable(title, timestamps, data.heapHistogramDumpDetails.classHistogramDetails, template, classLimit)
-            template = createInstancesTableDiff(title, timestamps, data.heapHistogramDumpDetails.classHistogramDetails, template, classLimit)
+            template = "###ANALYSIS-RESULT-SUMMARY###".toRegex().replace(template, analysisResultTable(data, reportConfig))
+
+
+            val details = data.heapHistogramDumpDetails.classHistogramDetails
+            template = createBytesTable(title, timestamps, details, template)
+            template = createBytesTableDiff(title, timestamps, details, template)
+            template = createInstancesTable(title, timestamps, details, template)
+            template = createInstancesTableDiff(title, timestamps, details, template)
         }
-        val file = File(data.reportConfig.reportDirectory, "heapHistogramDumpReport-$title.html")
+        val file = File(reportConfig.reportDirectory, "heapHistogramDumpReport-$title.html")
         file.writeText(template)
         return file
     }
 
-    private fun analysisResultTable(data: HeapHistogramDumpReport): String {
+    private fun analysisResultTable(data: HeapHistogramDumpReport, reportConfig: ReportConfig): String {
         val html = StringBuilder(2048)
+        val reportLimits = data.reportLimits
 
         html.append("<table>")
         html.append("<tr><th>key</th><th>value</th></tr>")
-        html.append("<tr><td>Test run id</td><td><b>${data.reportConfig.identifier}</b></td></tr>").append("\n")
+        html.append("<tr><td>Test run id</td><td><b>${reportConfig.identifier}</b></td></tr>").append("\n")
 
-        html.append("<tr><td>Report date</td><td><b>${data.reportConfig.reportDateTime}</b></td></tr>").append("\n")
+        html.append("<tr><td>Report date</td><td><b>${reportConfig.reportDateTime}</b></td></tr>").append("\n")
         html.append("<tr><td>Overall analysis result</td><td><b>${data.leakResult}</b></td></tr>").append("\n")
-        html.append("<tr><td>Report settings</td><td><b>${data.reportConfig.settings}</b></td></tr>").append("\n")
-        html.append("<tr><td>Report class limit</td><td><b>${data.reportConfig.classLimit}</b></td></tr>").append("\n")
-        html.append("<tr><td>Report byte limit</td><td><b>${HumanReadable.humanReadableMemorySize(data.reportConfig.byteLimit)}</b></td></tr>").append("\n")
-        html.append("<tr><td>Maximum allowed growth percentage</td><td><b>${data.reportConfig.maxGrowthPercentage} %</b></td></tr>").append("\n")
+        html.append("<tr><td>Report settings</td><td><b>${reportConfig.settings}</b></td></tr>").append("\n")
+        html.append("<tr><td>Report class limit</td><td><b>${reportLimits.classLimit}</b></td></tr>").append("\n")
+        html.append("<tr><td>Report byte limit</td><td><b>${HumanReadable.humanReadableMemorySize(reportLimits.byteLimit)}</b></td></tr>").append("\n")
+        html.append("<tr><td>Maximum allowed growth percentage</td><td><b>${reportLimits.maxGrowthPercentage} %</b></td></tr>").append("\n")
+        html.append("<tr><td>Minimum growth points percentage</td><td><b>${reportLimits.minGrowthPointsPercentage} %</b></td></tr>").append("\n")
+        html.append("<tr><td>Safe list</td><td><b>${reportLimits.safeList}</b></td></tr>").append("\n")
+        html.append("<tr><td>Watch list</td><td><b>${reportLimits.watchList}</b></td></tr>").append("\n")
         html.append("<table>")
 
         html.append("<table>").append("\n")
@@ -183,16 +189,17 @@ object HtmlGraphCreator {
     }
 
     private fun createChartDataTable(
-            data: List<ClassHistogramDetails>,
-            timestamps: List<Long?>,
-            detailsMapper: (ClassHistogramDetails) -> List<Long?>,
-            limit: Int): String {
+        data: List<ClassHistogramDetails>,
+        timestamps: List<Long?>,
+        detailsMapper: (ClassHistogramDetails) -> List<Long?>
+    ): String {
 
         val table = StringBuilder(2048)
 
         // no colors in legend names 😔
-        val classNames = data.take(limit).map { "${mapToUnicodeArrow(it.analysis)}$nonBreakSpace${it.className}" }.toList()
-        val detailsList = data.take(limit).map(detailsMapper).toList()
+        val classNames = data.map { "${mapToUnicodeArrow(it.analysis)}$nonBreakSpace${it.classInfo.name}" }.toList()
+        val detailsList = data.map(detailsMapper).toList()
+
         table.append("['Time'")
         if (classNames.isNotEmpty()) {
             val classNamesList = classNames.map { "'${it}'" }.joinToString(separator = ",")
@@ -207,7 +214,7 @@ object HtmlGraphCreator {
             table.append("[ new Date(").append(timestamp).append(")")
             if (detailsList.isNotEmpty()) {
                 table.append(", ")
-                val bytesForTimestamp = detailsList.map { it.get(i) ?: 0 }.joinToString(separator = ",")
+                val bytesForTimestamp = detailsList.map { it[i] ?: 0 }.joinToString(separator = ",")
                 table.append(bytesForTimestamp)
             } else {
                 table.append(", 0")
@@ -243,11 +250,16 @@ object HtmlGraphCreator {
         return "<div style='color:$color'>${mapToUnicodeArrow(analysis)}</div>"
     }
 
-    private fun createBytesTable(title: String, timestamps: List<Long?>, data: List<ClassHistogramDetails>, template: String, classLimit: Int): String {
+    private fun createBytesTable(
+        title: String,
+        timestamps: List<Long?>,
+        data: List<ClassHistogramDetails>,
+        template: String
+    ): String {
         var newTemplate = template
 
         val detailsMapper: (ClassHistogramDetails) -> List<Long?> = { it.bytes }
-        val table = createChartDataTable(data, timestamps, detailsMapper, classLimit)
+        val table = createChartDataTable(data, timestamps, detailsMapper)
 
         newTemplate = "###TABLE_BYTES###".toRegex().replace(newTemplate, Regex.escapeReplacement(table))
         newTemplate = "###TITLE_BYTES###".toRegex().replace(newTemplate, "bytes in heap - $title")
@@ -258,11 +270,11 @@ object HtmlGraphCreator {
         return newTemplate
     }
 
-    private fun createBytesTableDiff(title: String, timestamps: List<Long?>, data: List<ClassHistogramDetails>, template: String, classLimit: Int): String {
+    private fun createBytesTableDiff(title: String, timestamps: List<Long?>, data: List<ClassHistogramDetails>, template: String): String {
         var newTemplate = template
 
         val detailsMapper: (ClassHistogramDetails) -> List<Long?> = { it.bytesDiff }
-        val table = createChartDataTable(data, timestamps, detailsMapper, classLimit)
+        val table = createChartDataTable(data, timestamps, detailsMapper)
 
         newTemplate = "###TABLE_BYTES_DIFF###".toRegex().replace(newTemplate, Regex.escapeReplacement(table))
         newTemplate = "###TITLE_BYTES_DIFF###".toRegex().replace(newTemplate, "bytes diff in heap - $title")
@@ -273,11 +285,11 @@ object HtmlGraphCreator {
         return newTemplate
     }
 
-    private fun createInstancesTable(title: String, timestamps: List<Long?>, data: List<ClassHistogramDetails>, template: String, classLimit: Int): String {
+    private fun createInstancesTable(title: String, timestamps: List<Long?>, data: List<ClassHistogramDetails>, template: String): String {
         var newTemplate = template
 
         val detailsMapper: (ClassHistogramDetails) -> List<Long?> = { it.instances }
-        val table = createChartDataTable(data, timestamps, detailsMapper, classLimit)
+        val table = createChartDataTable(data, timestamps, detailsMapper)
 
         newTemplate = "###TABLE_INSTANCES###".toRegex().replace(newTemplate, Regex.escapeReplacement(table))
         newTemplate = "###TITLE_INSTANCES###".toRegex().replace(newTemplate,"instances in heap - $title")
@@ -288,11 +300,11 @@ object HtmlGraphCreator {
         return newTemplate
     }
 
-    private fun createInstancesTableDiff(title: String, timestamps: List<Long?>, data: List<ClassHistogramDetails>, template: String, classLimit: Int): String {
+    private fun createInstancesTableDiff(title: String, timestamps: List<Long?>, data: List<ClassHistogramDetails>, template: String): String {
         var newTemplate = template
 
         val detailsMapper: (ClassHistogramDetails) -> List<Long?> = { it.instancesDiff }
-        val table = createChartDataTable(data, timestamps, detailsMapper, classLimit)
+        val table = createChartDataTable(data, timestamps, detailsMapper)
 
         newTemplate = "###TABLE_INSTANCES_DIFF###".toRegex().replace(newTemplate, Regex.escapeReplacement(table))
         newTemplate = "###TITLE_INSTANCES_DIFF###".toRegex().replace(newTemplate, "instances diff in heap - $title")

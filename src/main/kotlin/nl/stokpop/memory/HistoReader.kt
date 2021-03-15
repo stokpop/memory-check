@@ -15,10 +15,7 @@
  */
 package nl.stokpop.memory
 
-import nl.stokpop.memory.domain.ClassName
-import nl.stokpop.memory.domain.HeapHistogramDump
-import nl.stokpop.memory.domain.HeapHistogramDumpLine
-import nl.stokpop.memory.domain.SafeGrowSet
+import nl.stokpop.memory.domain.*
 import java.io.File
 import java.io.IOException
 import java.nio.file.Files
@@ -28,13 +25,15 @@ import java.time.LocalDateTime
 
 object HistoReader {
 
-    val isoDateRegex = """\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?""".toRegex()
 
-    fun readHistos(histoFiles: List<File>, safeGrowList: SafeGrowSet): List<HeapHistogramDump> {
+    val isoDateRegex = """\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?""".toRegex()
+    val spacesRegex = "\\s+".toRegex()
+
+    fun readHistos(histoFiles: List<File>, safeGrowList: SafeList, watchList: WatchList): List<HeapHistogramDump> {
         return histoFiles
             .map {
                 val dumpDate = dateForHistoFile(it)
-                HeapHistogramDump(it, dumpDate, readHisto(it, safeGrowList)) }
+                HeapHistogramDump(it, dumpDate, readHisto(it, safeGrowList, watchList)) }
             .toList()
     }
 
@@ -59,28 +58,28 @@ object HistoReader {
         }
     }
 
-    private fun readHisto(file: File, safeGrowSet: SafeGrowSet) : List<HeapHistogramDumpLine> {
+    private fun readHisto(file: File, safeList: SafeList, watchList: WatchList) : List<HeapHistogramDumpLine> {
         return file.useLines { line ->
             line.map { it.trim() }
                     .filter { it.contains(':') } // very basic check for lines to parse...
-                    .map { createHistoLine(it, safeGrowSet) }
+                    .map { createHistoLine(it, safeList, watchList) }
                     .toList()
         }
     }
 
-    private fun createHistoLine(line: String, safeGrowSet: SafeGrowSet): HeapHistogramDumpLine {
-        val split = line.split("\\s+".toRegex())
+    private fun createHistoLine(line: String, safeList: SafeList, watchList: WatchList): HeapHistogramDumpLine {
+        val split = line.split(spacesRegex)
         // 5 elements can be found in java 9+ dumps with packages, example:
         //    4:         88508        2124192  java.lang.String (java.base@11.0.6)
         // the module is ignored
         if (!(split.size == 4 || split.size == 5)) {
             throw InvalidHistoLineException("Cannot read histo line (${split.size} elements, 4 or 5 expected): '$line' and '$split'")
         }
-        val num = skipLastCharacter(split[0])
+        val lineNumber = skipLastCharacter(split[0])
         val instances = split[1]
         val bytes = split[2]
         val name = split[3]
-        return HeapHistogramDumpLine(className = ClassName(name, safeGrowSet.isSafeToGrow(name)), num = num.toLong(), instances = instances.toLong(), bytes = bytes.toLong())
+        return HeapHistogramDumpLine(classInfo = ClassInfo(name, safeList.matches(name), watchList.matches(name)), lineNumber = lineNumber.toLong(), instances = instances.toLong(), bytes = bytes.toLong())
     }
 
     private fun skipLastCharacter(s: String) = s.substring(0, s.length - 1)

@@ -38,17 +38,18 @@ object HistoAnalyser {
         return ClassGrowthTrend(timestamps, data)
     }
 
-    private fun processClassNameForHistoInfos(name: ClassName, dumps: List<HeapHistogramDump>, config: ReportConfig): ClassGrowth {
+    private fun processClassNameForHistoInfos(name: ClassInfo, dumps: List<HeapHistogramDump>, config: ReportConfig): ClassGrowth {
         val histosForClassName = dumps
-            .map { dump -> dump.histogram.firstOrNull { name == it.className } ?: createGhostLine(name) }
+            .map { dump -> dump.histogram.firstOrNull { name == it.classInfo } ?: createGhostLine(name) }
             .toList()
-        return ClassGrowth(name, histosForClassName, analyseGrowth(histosForClassName, name.isSafeToGrow, config.maxGrowthPercentage.toDouble()) { it.bytes })
+        return ClassGrowth(name, histosForClassName, analyseGrowth(histosForClassName, name.isOnSafeList, config.reportLimits.maxGrowthPercentage, config.reportLimits.minGrowthPointsPercentage) { it.bytes })
     }
 
     fun analyseGrowth(
         histoLines: List<HeapHistogramDumpLine>,
         isSafeToGrow: Boolean = false,
         maxGrowthPercentage: Double = 10.0,
+        minGrowthPointPercentage: Double = 50.0,
         thingToCheck: (HeapHistogramDumpLine) -> Long? = { it.instances }): AnalysisResult {
 
         if (histoLines.isEmpty()) return UNKNOWN
@@ -92,11 +93,19 @@ object HistoAnalyser {
         if (ghostCount == compareSize) return UNKNOWN
 
         val totalGrowthCount = growthCriticalCount + growthMinorCount
+        val growthPointsPercentage = (totalGrowthCount/histoSize.toDouble()) * 100.0
+        val hasEnoughGrowthPoints = growthPointsPercentage >= minGrowthPointPercentage
 
-        if (growthCriticalCount > 0 && totalGrowthCount + ghostCount + stableCount == compareSize && !lastIsGhost) {
+        if (growthCriticalCount > 0
+            && totalGrowthCount + ghostCount + stableCount == compareSize
+            && !lastIsGhost
+            && hasEnoughGrowthPoints) {
             return if (isSafeToGrow) GROW_SAFE else GROW_CRITICAL
         }
-        if (growthMinorCount > 0 && growthMinorCount + ghostCount + stableCount == compareSize && !lastIsGhost) {
+        if (growthMinorCount > 0
+            && growthMinorCount + ghostCount + stableCount == compareSize
+            && !lastIsGhost
+            && hasEnoughGrowthPoints) {
             return if (isSafeToGrow) GROW_SAFE else GROW_MINOR
         }
 

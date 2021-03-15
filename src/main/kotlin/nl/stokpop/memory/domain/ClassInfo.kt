@@ -15,18 +15,7 @@
  */
 package nl.stokpop.memory.domain
 
-import java.io.File
-import java.time.LocalDateTime
+import kotlinx.serialization.Serializable
 
-/**
- * Representation of a heap histogram dump, which is one file with the histogram lines.
- */
-data class HeapHistogramDump (
-    val histoFile: File,
-    val timestamp: LocalDateTime,
-    val histogram: List<HeapHistogramDumpLine>
-    ) {
-    fun findAllClassNames() : List<ClassInfo> {
-        return histogram.map { it.classInfo }.toList()
-    }
-}
+@Serializable
+data class ClassInfo(val name: String, val isOnSafeList: Boolean = false, val isOnWatchList: Boolean = false)

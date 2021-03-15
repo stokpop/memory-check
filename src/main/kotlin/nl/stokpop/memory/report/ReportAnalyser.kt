@@ -23,55 +23,80 @@ import nl.stokpop.memory.domain.json.HeapHistogramDumpSummary
 
 object ReportAnalyser {
 
-    fun createHeapHistogramDumpReport(classGrowthTrend: ClassGrowthTrend, reportConfig: ReportConfig) : HeapHistogramDumpReport {
+    fun createHeapHistogramDumpReport(classGrowthTrend: ClassGrowthTrend, reportLimits: ReportLimits) : HeapHistogramDumpReport {
 
         val analysisResultToCount = AnalysisResult.values().asSequence()
-                .map { it to classGrowthTrend.statusCount(it, reportConfig.byteLimit) }
+                .map { it to classGrowthTrend.statusCount(it, reportLimits.byteLimit) }
                 .toMap()
 
         val heapHistogramDumpSummary = HeapHistogramDumpSummary(analysisResultToCount)
 
         val leakResult = when {
-            (heapHistogramDumpSummary.data.get(AnalysisResult.GROW_CRITICAL) ?: 0) > 0 -> AnalysisResult.GROW_CRITICAL
-            (heapHistogramDumpSummary.data.get(AnalysisResult.GROW_MINOR) ?: 0) > 0 -> AnalysisResult.GROW_MINOR
-            (heapHistogramDumpSummary.data.get(AnalysisResult.GROW_SAFE) ?: 0) > 0 -> AnalysisResult.GROW_SAFE
-            (heapHistogramDumpSummary.data.get(AnalysisResult.SHRINK) ?: 0) > 0 -> AnalysisResult.SHRINK
-            (heapHistogramDumpSummary.data.get(AnalysisResult.STABLE) ?: 0) > 0 -> AnalysisResult.STABLE
+            (heapHistogramDumpSummary.data[AnalysisResult.GROW_CRITICAL] ?: 0) > 0 -> AnalysisResult.GROW_CRITICAL
+            (heapHistogramDumpSummary.data[AnalysisResult.GROW_MINOR] ?: 0) > 0 -> AnalysisResult.GROW_MINOR
+            (heapHistogramDumpSummary.data[AnalysisResult.GROW_SAFE] ?: 0) > 0 -> AnalysisResult.GROW_SAFE
+            (heapHistogramDumpSummary.data[AnalysisResult.SHRINK] ?: 0) > 0 -> AnalysisResult.SHRINK
+            (heapHistogramDumpSummary.data[AnalysisResult.STABLE] ?: 0) > 0 -> AnalysisResult.STABLE
             else -> AnalysisResult.UNKNOWN
         }
 
-        val analysisFilter: (Map.Entry<ClassName, ClassGrowth>) -> Boolean = {
-            (reportConfig.doReportGrowCritical && it.value.analysisResult == AnalysisResult.GROW_CRITICAL)
-                    || (reportConfig.doReportGrowMinor && it.value.analysisResult == AnalysisResult.GROW_MINOR)
-                    || (reportConfig.doReportGrowSafe && it.value.analysisResult == AnalysisResult.GROW_SAFE)
-                    || (reportConfig.doReportShrinks && it.value.analysisResult == AnalysisResult.SHRINK)
-                    || (reportConfig.doReportStable && it.value.analysisResult == AnalysisResult.STABLE)
-                    || (reportConfig.doReportUnknowns && it.value.analysisResult == AnalysisResult.UNKNOWN)}
+        val analysisFilter: (Map.Entry<ClassInfo, ClassGrowth>) -> Boolean = {
+            (reportLimits.doReportGrowCritical && it.value.analysisResult == AnalysisResult.GROW_CRITICAL)
+                    || (reportLimits.doReportGrowMinor && it.value.analysisResult == AnalysisResult.GROW_MINOR)
+                    || (reportLimits.doReportGrowSafe && it.value.analysisResult == AnalysisResult.GROW_SAFE)
+                    || (reportLimits.doReportShrinks && it.value.analysisResult == AnalysisResult.SHRINK)
+                    || (reportLimits.doReportStable && it.value.analysisResult == AnalysisResult.STABLE)
+                    || (reportLimits.doReportUnknowns && it.value.analysisResult == AnalysisResult.UNKNOWN)}
 
-        val classHistogramDumpDetails = classGrowthTrend.data.entries.asSequence()
+        // split on isOnWatchList and skip filters for classes on watch list
+        // note that the class limit is only applied to non watch list members, so actual list
+        // of classes in the report can be bigger
+        val classHistogramDetailsByWatchList = classGrowthTrend.data.entries.groupBy { it.key.isOnWatchList }
+
+        val detailsNonWatchList = classHistogramDetailsByWatchList.getOrDefault(false, emptyList())
+        val detailsWatchList = classHistogramDetailsByWatchList.getOrDefault(true, emptyList())
+
+        val classHistogramDumpDetailsNonWatchList = detailsNonWatchList.asSequence()
                 .filter(analysisFilter)
+                .filter { isLargerThanBytesInLastHisto(it.value, reportLimits.byteLimit) }
+                .take(reportLimits.classLimit)
                 .map { ClassHistogramDetails(
-                        className = it.key.name,
+                        classInfo = it.key,
                         analysis = it.value.analysisResult,
                         bytes = createBytesList(it.value.histoLines),
                         bytesDiff = createBytesDiffList(it.value.histoLines),
                         instances = createInstancesList(it.value.histoLines),
                         instancesDiff = createInstancesDiffList(it.value.histoLines)
                 )  }
-                .filter { largerThanBytesInLastHisto(it, reportConfig.byteLimit) }
                 .toList()
 
-        val heapHistogramDumpDetails = HeapHistogramDumpDetails(classHistogramDumpDetails, classGrowthTrend.timestamps)
+        val classHistogramDumpDetailsWatchList = detailsWatchList.asSequence()
+                .filter(analysisFilter)
+                .map { ClassHistogramDetails(
+                        classInfo = it.key,
+                        analysis = it.value.analysisResult,
+                        bytes = createBytesList(it.value.histoLines),
+                        bytesDiff = createBytesDiffList(it.value.histoLines),
+                        instances = createInstancesList(it.value.histoLines),
+                        instancesDiff = createInstancesDiffList(it.value.histoLines)
+                )  }
+                .toList()
+
+        val totalDetailsToReport = (classHistogramDumpDetailsNonWatchList + classHistogramDumpDetailsWatchList).sortedByDescending { it.bytes.last() }
+
+        val heapHistogramDumpDetails = HeapHistogramDumpDetails(totalDetailsToReport, classGrowthTrend.timestamps)
 
         return HeapHistogramDumpReport(
-                reportConfig = reportConfig,
+                reportLimits = reportLimits,
                 leakResult = leakResult,
                 heapHistogramDumpSummary = heapHistogramDumpSummary,
                 heapHistogramDumpDetails = heapHistogramDumpDetails)
     }
 
-    private fun largerThanBytesInLastHisto(it: ClassHistogramDetails, minSizeInBytes: Long) =
-            it.bytes.last() != null && it.bytes.last()!! > minSizeInBytes
+    private fun isLargerThanBytesInLastHisto(it: ClassGrowth, minSizeInBytes: Long): Boolean {
+        val bytes = it.histoLines.last().bytes
+        return bytes != null && bytes > minSizeInBytes
+    }
 
     private fun createInstancesList(histoLines: List<HeapHistogramDumpLine>): List<Long?> {
         return histoLines.asSequence().map { it.instances }.toList()

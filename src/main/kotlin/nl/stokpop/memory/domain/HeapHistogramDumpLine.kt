@@ -19,16 +19,16 @@ package nl.stokpop.memory.domain
  * Representation of one line in a heap histogram dump.
  */
 data class HeapHistogramDumpLine(
-        val className: ClassName,
-        val num: Long?,
-        val instances: Long?,
-        val bytes: Long?
+    val classInfo: ClassInfo,
+    val lineNumber: Long?,
+    val instances: Long?,
+    val bytes: Long?
 ) {
     companion object {
-        fun createGhostLine(name: ClassName) = HeapHistogramDumpLine(name, null, null, null)
+        fun createGhostLine(name: ClassInfo) = HeapHistogramDumpLine(name, null, null, null)
     }
 
     fun isGhost(): Boolean {
-        return num == null
+        return lineNumber == null
     }
 }

@@ -15,10 +15,19 @@
  */
 package nl.stokpop.memory.domain
 
+import nl.stokpop.memory.MemoryCheckException
+import kotlin.streams.toList
+
 data class ClassGrowthTrend(
         val timestamps: List<Long>,
-        val data: Map<ClassName, ClassGrowth>
+        val data: Map<ClassInfo, ClassGrowth>
 ) {
+    init {
+        val unequalHistoLinesCountClassnames = data.values.stream().filter { it.histoLines.size != timestamps.size }.map { it.classInfo.name }.toList()
+        if (unequalHistoLinesCountClassnames.isNotEmpty())
+            throw MemoryCheckException("size of histo lines is not equal to timestamps count (${timestamps.size}) for (${unequalHistoLinesCountClassnames})")
+    }
+
     fun statusCount(
         status: AnalysisResult,
         bytesLimit: Long

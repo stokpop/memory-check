@@ -21,22 +21,10 @@ import nl.stokpop.memory.domain.AnalysisResult.*
 
 @Serializable
 class ReportConfig(
-        val settings: Set<AnalysisResult>,
-        val histosDirectory: String,
-        val reportDirectory: String,
-        val extension: String,
-        val identifier: String,
-        val reportDateTime: String,
-        val classLimit: Int,
-        val byteLimit: Long,
-        val maxGrowthPercentage: Int,
-        val safeGrowSet: Set<String>) {
-
-    val doReportGrowCritical = settings.contains(GROW_CRITICAL)
-    val doReportGrowMinor = settings.contains(GROW_MINOR)
-    val doReportGrowSafe = settings.contains(GROW_SAFE)
-    val doReportUnknowns = settings.contains(UNKNOWN)
-    val doReportShrinks = settings.contains(SHRINK)
-    val doReportStable  = settings.contains(STABLE)
-
-}
+    val settings: Set<AnalysisResult> = setOf(),
+    val histosDirectory: String,
+    val reportDirectory: String,
+    val extension: String,
+    val identifier: String,
+    val reportDateTime: String,
+    val reportLimits: ReportLimits)

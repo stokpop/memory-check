@@ -24,11 +24,11 @@ import java.time.format.DateTimeFormatter
 
 object TextReport {
 
-    fun report(histos: List<HeapHistogramDump>, data: HeapHistogramDumpReport) {
+    fun report(histos: List<HeapHistogramDump>, data: HeapHistogramDumpReport, reportConfig: ReportConfig) {
 
-        val minSizeInBytes = data.reportConfig.byteLimit
+        val minSizeInBytes = data.reportLimits.byteLimit
 
-        val header = "Histogram report - ${data.reportConfig.reportDateTime}"
+        val header = "Histogram report - ${reportConfig.reportDateTime}"
         val dashes = generateSequence { "-" }.take(header.length).joinToString(separator = "") { it }
         println(dashes)
         println(header)
@@ -49,37 +49,37 @@ object TextReport {
 
         val details = data.heapHistogramDumpDetails.classHistogramDetails.asSequence()
 
-        if (data.reportConfig.doReportGrowCritical) {
+        if (data.reportLimits.doReportGrowCritical) {
             println("\n\nFound possible critical memory leaks:")
             details.filter { it.analysis == GROW_CRITICAL }
                     .forEach { reportLine(it) }
         }
 
-        if (data.reportConfig.doReportGrowMinor) {
+        if (data.reportLimits.doReportGrowMinor) {
             println("\n\nFound possible minor memory leaks:")
             details.filter { it.analysis == GROW_MINOR }
                 .forEach { reportLine(it) }
         }
 
-        if (data.reportConfig.doReportGrowSafe) {
+        if (data.reportLimits.doReportGrowSafe) {
             println("\n\nFound possible safe memory leaks:")
             details.filter { it.analysis == GROW_SAFE }
                 .forEach { reportLine(it) }
         }
 
-        if (data.reportConfig.doReportShrinks) {
+        if (data.reportLimits.doReportShrinks) {
             println("\n\nFound shrinks:")
             details.filter { it.analysis == SHRINK }
                     .forEach { reportLine(it) }
         }
 
-        if (data.reportConfig.doReportUnknowns) {
+        if (data.reportLimits.doReportUnknowns) {
             println("\n\nFound unknowns:")
             details.filter { it.analysis == UNKNOWN }
                     .forEach { reportLine(it) }
         }
 
-        if (data.reportConfig.doReportStable) {
+        if (data.reportLimits.doReportStable) {
             println("\n\nFound stable:")
             details.filter { it.analysis == STABLE }
                     .forEach { reportLine(it) }
@@ -109,7 +109,7 @@ object TextReport {
 //                .map { if (it == null) charForNull else HumanReadable.humanReadableMemorySize(it) }
 //                .toList()
 
-        print("${details.className} ")
+        print("${details.classInfo.name} ")
     }
 
 }

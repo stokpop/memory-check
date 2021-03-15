@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2020 Peter Paul Bakker, Stokpop Software Solutions
+ * Copyright (C) 2021 Peter Paul Bakker, Stokpop Software Solutions
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,4 +15,16 @@
  */
 package nl.stokpop.memory.domain
 
-data class ClassName(val name: String, val isSafeToGrow: Boolean = false)
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Test
+
+internal class SafeListTest {
+    @Test
+    fun checkIsSafeGrowth() {
+        val safeGrowSet = SafeList(setOf("java.lang.String", "java.time.*"))
+        assertTrue(safeGrowSet.matches("java.lang.String"))
+        assertTrue(safeGrowSet.matches("java.time.Date"))
+        assertFalse(safeGrowSet.matches("java.timeDate"))
+    }
+}

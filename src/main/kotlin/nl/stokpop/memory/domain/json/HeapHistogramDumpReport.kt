@@ -17,14 +17,15 @@ package nl.stokpop.memory.domain.json
 
 import kotlinx.serialization.Serializable
 import nl.stokpop.memory.domain.AnalysisResult
-import nl.stokpop.memory.report.ReportConfig
+import nl.stokpop.memory.domain.ClassInfo
+import nl.stokpop.memory.report.ReportLimits
 
 @Serializable
-data class HeapHistogramDumpReport (
-        val reportConfig: ReportConfig,
-        val leakResult: AnalysisResult,
-        val heapHistogramDumpSummary: HeapHistogramDumpSummary,
-        val heapHistogramDumpDetails: HeapHistogramDumpDetails
+data class HeapHistogramDumpReport(
+    val reportLimits: ReportLimits,
+    val leakResult: AnalysisResult,
+    val heapHistogramDumpSummary: HeapHistogramDumpSummary,
+    val heapHistogramDumpDetails: HeapHistogramDumpDetails
 )
 
 @Serializable
@@ -34,13 +35,13 @@ data class HeapHistogramDumpDetails (
 )
 
 @Serializable
-class ClassHistogramDetails (
-        val analysis: AnalysisResult,
-        val className: String,
-        val bytes: List<Long?>,
-        val bytesDiff: List<Long?>,
-        val instances: List<Long?>,
-        val instancesDiff: List<Long?>
+class ClassHistogramDetails(
+    val analysis: AnalysisResult,
+    val classInfo: ClassInfo,
+    val bytes: List<Long?>,
+    val bytesDiff: List<Long?>,
+    val instances: List<Long?>,
+    val instancesDiff: List<Long?>
 )
 
 @Serializable

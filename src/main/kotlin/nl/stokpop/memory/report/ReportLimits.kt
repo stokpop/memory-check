@@ -15,16 +15,21 @@
  */
 package nl.stokpop.memory.report
 
-import kotlinx.serialization.json.Json
-import nl.stokpop.memory.domain.json.HeapHistogramDumpReport
-import java.io.File
+import kotlinx.serialization.Serializable
+import nl.stokpop.memory.domain.AnalysisResult
+import nl.stokpop.memory.domain.AnalysisResult.*
 
-object JsonReport {
-
-    fun report(data: HeapHistogramDumpReport, reportConfig: ReportConfig): File {
-        val jsonString = Json.encodeToString(HeapHistogramDumpReport.serializer(), data)
-        val file = File(reportConfig.reportDirectory, "heapHistogramDumpReport-${reportConfig.identifier}.json")
-        file.writeText(jsonString)
-        return file
-    }
-}
+@Serializable
+class ReportLimits(
+    val classLimit: Int,
+    val byteLimit: Long,
+    val maxGrowthPercentage: Double,
+    val minGrowthPointsPercentage: Double,
+    val safeList: Set<String> = setOf(),
+    val watchList: Set<String> = setOf(),
+    val doReportGrowCritical: Boolean = true,
+    val doReportGrowMinor: Boolean = true,
+    val doReportGrowSafe: Boolean = true,
+    val doReportUnknowns: Boolean = false,
+    val doReportShrinks: Boolean = false,
+    val doReportStable: Boolean = false)
