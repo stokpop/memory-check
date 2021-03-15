@@ -98,21 +98,19 @@ object HistoAnalyser {
 
         if (growthCriticalCount > 0
             && totalGrowthCount + ghostCount + stableCount == compareSize
-            && !lastIsGhost
-            && hasEnoughGrowthPoints) {
-            return if (isSafeToGrow) GROW_SAFE else GROW_CRITICAL
+            && !lastIsGhost) {
+            return if (hasEnoughGrowthPoints) { if (isSafeToGrow) GROW_SAFE else GROW_CRITICAL } else GROW_HICK_UPS
         }
         if (growthMinorCount > 0
             && growthMinorCount + ghostCount + stableCount == compareSize
-            && !lastIsGhost
-            && hasEnoughGrowthPoints) {
-            return if (isSafeToGrow) GROW_SAFE else GROW_MINOR
+            && !lastIsGhost) {
+            return if (hasEnoughGrowthPoints) { if (isSafeToGrow) GROW_SAFE else GROW_MINOR } else GROW_HICK_UPS
         }
 
         if (totalGrowthCount + ghostCount == compareSize && lastIsGhost) return UNKNOWN
         if (shrinkCount > 0 && shrinkCount + ghostCount + stableCount == compareSize) return SHRINK
         if (stableCount + ghostCount == compareSize) return STABLE
 
-        return UNKNOWN
+        return SHRINK_AND_GROW
     }
 }

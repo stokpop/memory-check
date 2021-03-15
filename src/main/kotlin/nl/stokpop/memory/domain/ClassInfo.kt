@@ -18,4 +18,14 @@ package nl.stokpop.memory.domain
 import kotlinx.serialization.Serializable
 
 @Serializable
-data class ClassInfo(val name: String, val isOnSafeList: Boolean = false, val isOnWatchList: Boolean = false)
+data class ClassInfo(val name: String, val isOnSafeList: Boolean = false, val isOnWatchList: Boolean = false) {
+    companion object {
+        fun prefixWatchListAndSafeList(classInfo: ClassInfo): String {
+            val prefixString = java.lang.StringBuilder()
+            if (classInfo.isOnWatchList) prefixString.append("(WL)")
+            if (classInfo.isOnSafeList) prefixString.append("(SL)")
+            return if (prefixString.isEmpty()) "" else prefixString.toString()
+        }
+
+    }
+}

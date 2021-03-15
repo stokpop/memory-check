@@ -35,6 +35,8 @@ object ReportAnalyser {
             (heapHistogramDumpSummary.data[AnalysisResult.GROW_CRITICAL] ?: 0) > 0 -> AnalysisResult.GROW_CRITICAL
             (heapHistogramDumpSummary.data[AnalysisResult.GROW_MINOR] ?: 0) > 0 -> AnalysisResult.GROW_MINOR
             (heapHistogramDumpSummary.data[AnalysisResult.GROW_SAFE] ?: 0) > 0 -> AnalysisResult.GROW_SAFE
+            (heapHistogramDumpSummary.data[AnalysisResult.GROW_HICK_UPS] ?: 0) > 0 -> AnalysisResult.GROW_HICK_UPS
+            (heapHistogramDumpSummary.data[AnalysisResult.SHRINK_AND_GROW] ?: 0) > 0 -> AnalysisResult.SHRINK_AND_GROW
             (heapHistogramDumpSummary.data[AnalysisResult.SHRINK] ?: 0) > 0 -> AnalysisResult.SHRINK
             (heapHistogramDumpSummary.data[AnalysisResult.STABLE] ?: 0) > 0 -> AnalysisResult.STABLE
             else -> AnalysisResult.UNKNOWN
@@ -44,9 +46,11 @@ object ReportAnalyser {
             (reportLimits.doReportGrowCritical && it.value.analysisResult == AnalysisResult.GROW_CRITICAL)
                     || (reportLimits.doReportGrowMinor && it.value.analysisResult == AnalysisResult.GROW_MINOR)
                     || (reportLimits.doReportGrowSafe && it.value.analysisResult == AnalysisResult.GROW_SAFE)
+                    || (reportLimits.doReportGrowHickUps && it.value.analysisResult == AnalysisResult.GROW_HICK_UPS)
+                    || (reportLimits.doReportShrinkAndGrow && it.value.analysisResult == AnalysisResult.SHRINK_AND_GROW)
                     || (reportLimits.doReportShrinks && it.value.analysisResult == AnalysisResult.SHRINK)
                     || (reportLimits.doReportStable && it.value.analysisResult == AnalysisResult.STABLE)
-                    || (reportLimits.doReportUnknowns && it.value.analysisResult == AnalysisResult.UNKNOWN)}
+                    || (reportLimits.doReportShrinkAndGrow && it.value.analysisResult == AnalysisResult.SHRINK_AND_GROW)}
 
         // split on isOnWatchList and skip filters for classes on watch list
         // note that the class limit is only applied to non watch list members, so actual list

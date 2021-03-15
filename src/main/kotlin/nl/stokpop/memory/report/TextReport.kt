@@ -17,6 +17,7 @@ package nl.stokpop.memory.report
 
 import nl.stokpop.memory.HumanReadable
 import nl.stokpop.memory.domain.AnalysisResult.*
+import nl.stokpop.memory.domain.ClassInfo
 import nl.stokpop.memory.domain.HeapHistogramDump
 import nl.stokpop.memory.domain.json.ClassHistogramDetails
 import nl.stokpop.memory.domain.json.HeapHistogramDumpReport
@@ -38,44 +39,52 @@ object TextReport {
 
         histos.forEach { println("File: '${it.histoFile.name}' with date ${it.timestamp.format(DateTimeFormatter.ISO_DATE_TIME)}") }
 
+        println("\nBelow only results are printed that have remaining size of at least ${HumanReadable.humanReadableMemorySize(minSizeInBytes)} in last histogram\n" +
+                "or are on the watch list.")
+
         println("\nNumber of GROW_CRITICAL ${data.heapHistogramDumpSummary.data[GROW_CRITICAL]}")
         println("Number of GROW_MINOR ${data.heapHistogramDumpSummary.data[GROW_MINOR]}")
         println("Number of GROW_SAFE ${data.heapHistogramDumpSummary.data[GROW_SAFE]}")
+        println("Number of GROW_HICK_UPS ${data.heapHistogramDumpSummary.data[GROW_HICK_UPS]}")
+        println("Number of SHRINK_AND_GROW ${data.heapHistogramDumpSummary.data[SHRINK_AND_GROW]}")
         println("Number of STABLE ${data.heapHistogramDumpSummary.data[STABLE]}")
         println("Number of SHRINK ${data.heapHistogramDumpSummary.data[SHRINK]}")
-        println("Number of UNKNOWN ${data.heapHistogramDumpSummary.data[UNKNOWN]}")
-
-        println("\nBelow only results are printed that have remaining size of at least ${HumanReadable.humanReadableMemorySize(minSizeInBytes)} in last histogram.")
 
         val details = data.heapHistogramDumpDetails.classHistogramDetails.asSequence()
 
         if (data.reportLimits.doReportGrowCritical) {
-            println("\n\nFound possible critical memory leaks:")
+            println("\n\nFound critical memory leaks:")
             details.filter { it.analysis == GROW_CRITICAL }
                     .forEach { reportLine(it) }
         }
 
         if (data.reportLimits.doReportGrowMinor) {
-            println("\n\nFound possible minor memory leaks:")
+            println("\n\nFound minor memory leaks:")
             details.filter { it.analysis == GROW_MINOR }
                 .forEach { reportLine(it) }
         }
 
         if (data.reportLimits.doReportGrowSafe) {
-            println("\n\nFound possible safe memory leaks:")
+            println("\n\nFound 'safe' memory leaks:")
             details.filter { it.analysis == GROW_SAFE }
                 .forEach { reportLine(it) }
         }
 
-        if (data.reportLimits.doReportShrinks) {
-            println("\n\nFound shrinks:")
-            details.filter { it.analysis == SHRINK }
-                    .forEach { reportLine(it) }
+        if (data.reportLimits.doReportGrowHickUps) {
+            println("\n\nFound grow hick ups:")
+            details.filter { it.analysis == GROW_HICK_UPS }
+                .forEach { reportLine(it) }
         }
 
-        if (data.reportLimits.doReportUnknowns) {
-            println("\n\nFound unknowns:")
-            details.filter { it.analysis == UNKNOWN }
+        if (data.reportLimits.doReportShrinkAndGrow) {
+            println("\n\nFound shrink and grow:")
+            details.filter { it.analysis == SHRINK_AND_GROW }
+                .forEach { reportLine(it) }
+        }
+
+        if (data.reportLimits.doReportShrinks) {
+            println("\n\nFound shrink:")
+            details.filter { it.analysis == SHRINK }
                     .forEach { reportLine(it) }
         }
 
@@ -88,28 +97,9 @@ object TextReport {
         println("\n")
     }
 
-    fun reportLine(details: ClassHistogramDetails) {
-
-//        val charForNull = "_"
-//
-//        val instances = details.instances.asSequence()
-//                .map { it?.toString() ?: charForNull }
-//                .toList()
-//
-//        val instancesDiffs = details.instancesDiff.asSequence()
-//                .map { it?.toString() ?: charForNull }
-//                .toList()
-//
-//        val bytes = details.bytes.asSequence()
-//                .map { if (it == null) charForNull else HumanReadable.humanReadableMemorySize(it) }
-//                .toList()
-//
-//        val bytesDiff = details.bytesDiff.asSequence()
-//                .asSequence()
-//                .map { if (it == null) charForNull else HumanReadable.humanReadableMemorySize(it) }
-//                .toList()
-
-        print("${details.classInfo.name} ")
+    private fun reportLine(details: ClassHistogramDetails) {
+        val classInfo = details.classInfo
+        print("${ClassInfo.prefixWatchListAndSafeList(classInfo)}${classInfo.name} ")
     }
 
 }

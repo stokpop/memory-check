@@ -33,7 +33,8 @@ data class ClassGrowthTrend(
         bytesLimit: Long
     ) = data.values
             .filter { it.analysisResult == status }
-            .filter { it.histoLines.last().bytes ?: 0 > bytesLimit }
+            // always add the onWatchList classes
+            .filter { it.classInfo.isOnWatchList || it.histoLines.last().bytes ?: 0 > bytesLimit }
             .count()
 
     fun statusFilter(

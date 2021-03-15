@@ -17,6 +17,7 @@ package nl.stokpop.memory.report
 
 import nl.stokpop.memory.HumanReadable
 import nl.stokpop.memory.domain.AnalysisResult
+import nl.stokpop.memory.domain.ClassInfo
 import nl.stokpop.memory.domain.json.ClassHistogramDetails
 import nl.stokpop.memory.domain.json.HeapHistogramDumpReport
 import java.io.File
@@ -29,6 +30,7 @@ object HtmlGraphCreator {
     private var arrowUpCritical = '\u25b2'
     private var arrowUpMinor = '\u21e7'
     private var arrowUpSafe = '\u2191'
+    private var arrowGrowHickUps = '\u2963'
     private var arrowUpDown = '\u2195'
     private var arrowDown = '\u2193'
     private var arrowFlat = '\u2194'
@@ -180,9 +182,9 @@ object HtmlGraphCreator {
         html.append("<table>")
 
         html.append("<table>").append("\n")
-        html.append("<tr><th>analysis result</th><th>count</th><th>icon</th></tr>")
+        html.append("<tr><th>analysis result</th><th>count</th><th>icon</th><th>description</th></tr>")
         html.append(data.heapHistogramDumpSummary.data.map {
-            "<tr><td>${it.key}</td><td>${it.value}</td><td>${mapToUnicodeArrow(it.key)}</td></tr>"
+            "<tr><td>${it.key}</td><td>${it.value}</td><td>${mapToUnicodeArrow(it.key)}</td><td>${it.key.description}</td></tr>"
         }.joinToString(separator = "\n"))
         html.append("</table>")
         return html.toString()
@@ -197,7 +199,7 @@ object HtmlGraphCreator {
         val table = StringBuilder(2048)
 
         // no colors in legend names 😔
-        val classNames = data.map { "${mapToUnicodeArrow(it.analysis)}$nonBreakSpace${it.classInfo.name}" }.toList()
+        val classNames = data.map { "${mapToUnicodeArrow(it.analysis)}$nonBreakSpace${ClassInfo.prefixWatchListAndSafeList(it.classInfo)}${it.classInfo.name}" }.toList()
         val detailsList = data.map(detailsMapper).toList()
 
         table.append("['Time'")
@@ -232,9 +234,11 @@ object HtmlGraphCreator {
             AnalysisResult.GROW_CRITICAL -> arrowUpCritical
             AnalysisResult.GROW_MINOR -> arrowUpMinor
             AnalysisResult.GROW_SAFE -> arrowUpSafe
+            AnalysisResult.GROW_HICK_UPS -> arrowGrowHickUps
+            AnalysisResult.SHRINK_AND_GROW -> arrowUpDown
             AnalysisResult.SHRINK -> arrowDown
             AnalysisResult.STABLE -> arrowFlat
-            AnalysisResult.UNKNOWN -> arrowUpDown
+            AnalysisResult.UNKNOWN -> '?'
         }
     }
 
@@ -243,9 +247,11 @@ object HtmlGraphCreator {
             AnalysisResult.GROW_CRITICAL -> "red"
             AnalysisResult.GROW_MINOR -> "orange"
             AnalysisResult.GROW_SAFE -> "green"
-            AnalysisResult.SHRINK -> "black"
+            AnalysisResult.GROW_HICK_UPS -> "purple"
+            AnalysisResult.SHRINK_AND_GROW -> "magenta"
+            AnalysisResult.SHRINK -> "dark-gray"
             AnalysisResult.STABLE -> "black"
-            AnalysisResult.UNKNOWN -> "gray"
+            AnalysisResult.UNKNOWN -> "light-gray"
         }
         return "<div style='color:$color'>${mapToUnicodeArrow(analysis)}</div>"
     }

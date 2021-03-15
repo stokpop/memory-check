@@ -2,7 +2,7 @@ import org.gradle.jvm.tasks.Jar
 import java.time.Year
 
 group = "nl.stokpop"
-version = "1.1.1"
+version = "1.2.0-SNAPSHOT"
 description = "memory-check"
 
 plugins {
@@ -39,6 +39,7 @@ license {
     header = rootProject.file("HEADER")
     ext.set("year",  Year.now().value)
     ext.set("name", "Peter Paul Bakker, Stokpop Software Solutions")
+    exclude("*.txt")
     // keeps complaining about header violations, so added this
     skipExistingHeaders = true
 }

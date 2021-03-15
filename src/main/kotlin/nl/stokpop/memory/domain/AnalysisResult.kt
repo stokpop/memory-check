@@ -16,10 +16,16 @@
 package nl.stokpop.memory.domain
 
 enum class AnalysisResult(val description: String) {
-    GROW_CRITICAL("critical growth detected (above critical threshold)"),
-    GROW_MINOR("minor growth detected (below critical threshold)"),
+    GROW_CRITICAL("critical growth detected (above 'maximum allowed growth percentage')"),
+    GROW_MINOR("minor growth detected (below 'maximum allowed growth percentage')"),
     GROW_SAFE("growth detected in white list of known growing classes"),
+    GROW_HICK_UPS("growth with hick-ups (less than 'minimum growth points percentage')"),
+    SHRINK_AND_GROW("both growth and shrink detected"),
     STABLE("no growth detected"),
     SHRINK("opposite of growth detected, might indicate reduction in load"),
-    UNKNOWN("both growth and shrink detected")
+    UNKNOWN("no matching analysis result");
+
+//    fun description(): String {
+//        return description
+//    }
 }

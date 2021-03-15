@@ -9,8 +9,8 @@ Run and provide a directory with histogram dumps and the file extension used
     java -jar memory-check-exec.jar -d /path/to/histo-dumps -e histo
 
 Optionally a settings argument, consisting of comma separated list of 
-`grow,shrink,unknown,stable`. This determines which categories to report.
-Default is `-s grow`.
+`grow_critical,grow_minor,grow_safe,shrink,shrink_and_grow,stable`. This determines which categories to report.
+Default is `-s grow_critical,grow_minor`.
 
 For help:
 

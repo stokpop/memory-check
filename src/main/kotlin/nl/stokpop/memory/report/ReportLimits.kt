@@ -16,8 +16,6 @@
 package nl.stokpop.memory.report
 
 import kotlinx.serialization.Serializable
-import nl.stokpop.memory.domain.AnalysisResult
-import nl.stokpop.memory.domain.AnalysisResult.*
 
 @Serializable
 class ReportLimits(
@@ -30,6 +28,7 @@ class ReportLimits(
     val doReportGrowCritical: Boolean = true,
     val doReportGrowMinor: Boolean = true,
     val doReportGrowSafe: Boolean = true,
-    val doReportUnknowns: Boolean = false,
+    val doReportGrowHickUps: Boolean = false,
+    val doReportShrinkAndGrow: Boolean = false,
     val doReportShrinks: Boolean = false,
     val doReportStable: Boolean = false)
