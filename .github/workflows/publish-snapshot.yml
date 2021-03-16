@@ -13,7 +13,7 @@ jobs:
         with:
           java-version: 1.8
       - name: Build with Gradle
-        run: ./gradlew build fatJar
+        run: ./gradlew build
       - name: Publish artifacts
         uses: actions/upload-artifact@v1
         with:
