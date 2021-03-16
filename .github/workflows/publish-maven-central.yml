@@ -18,13 +18,13 @@ jobs:
           SECRETS_PROPERTIES: ${{ secrets.SECRETS_PROPERTIES }}
           SECRING_ASC_GPG: ${{ secrets.SECRING_ASC_GPG }}
         run: |
-          echo "$SECRETS_PROPERTIES" | base64 -d > ./gradle.properties
+          echo "$SECRETS_PROPERTIES" | base64 -d >> ./gradle.properties
           echo "$SECRING_ASC_GPG" | base64 -d > ./secring.asc.gpg
       - name: Upload archives with Gradle
         run: ./gradlew --info -Prelease uploadArchives
       - name: Close and release repository with Gradle
         run: ./gradlew --info -Prelease closeAndReleaseRepository
-      - name: Decode secrets file
+      - name: Delete secrets
         run: |
           rm ./.gradle/gradle.properties
           rm ./secring.asc.gpg
