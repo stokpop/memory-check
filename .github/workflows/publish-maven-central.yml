@@ -14,12 +14,14 @@ jobs:
         with:
           java-version: 1.8
       - name: Decode secrets file
+        env:
+          SECRETS_PROPERTIES: ${{ secrets.SECRETS_PROPERTIES }}
+          SECRING_ASC_GPG: ${{ secrets.SECRING_ASC_GPG }}
         run: |
-          mkdir -p ./.gradle
-          echo "${{ secrets.SECRETS_PROPERTIES }}" | base64 -d > ./.gradle/gradle.properties
-          echo "${{ secrets.SECRING_ASC_GPG }}" | base64 -d > ./secring.asc.gpg
+          echo "$SECRETS_PROPERTIES" | base64 -d > ./gradle.properties
+          echo "$SECRING_ASC_GPG" | base64 -d > ./secring.asc.gpg
       - name: Build with Gradle
-        run: ./gradlew --info -Prelease clean build
+        run: ./gradlew --info clean build
       - name: Upload archives with Gradle
         run: ./gradlew --info -Prelease uploadArchives
       - name: Close and release repository with Gradle
