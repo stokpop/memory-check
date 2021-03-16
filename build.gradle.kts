@@ -3,7 +3,7 @@ import org.gradle.jvm.tasks.Jar
 import java.time.Year
 
 group = "nl.stokpop"
-version = "1.2.0-SNAPSHOT"
+version = file("VERSION").readText().trim()
 description = "memory-check"
 
 plugins {
