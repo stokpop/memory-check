@@ -36,7 +36,7 @@ internal class ReportAnalyserTest {
         val heapHistogramDumpReport =
             ReportAnalyser.createHeapHistogramDumpReport(ClassGrowthTrend(listOf(), mapOf()), reportLimits)
 
-        assertEquals(AnalysisResult.SHRINK_AND_GROW, heapHistogramDumpReport.leakResult)
+        assertEquals(AnalysisResult.UNKNOWN, heapHistogramDumpReport.leakResult)
 
     }
 

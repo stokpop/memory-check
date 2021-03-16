@@ -15,12 +15,12 @@
  */
 package nl.stokpop.memory.report
 
-import nl.stokpop.memory.HumanReadable
 import nl.stokpop.memory.domain.AnalysisResult.*
 import nl.stokpop.memory.domain.ClassInfo
 import nl.stokpop.memory.domain.HeapHistogramDump
 import nl.stokpop.memory.domain.json.ClassHistogramDetails
 import nl.stokpop.memory.domain.json.HeapHistogramDumpReport
+import nl.stokpop.memory.util.ConversionUtils
 import java.time.format.DateTimeFormatter
 
 object TextReport {
@@ -39,7 +39,7 @@ object TextReport {
 
         histos.forEach { println("File: '${it.histoFile.name}' with date ${it.timestamp.format(DateTimeFormatter.ISO_DATE_TIME)}") }
 
-        println("\nBelow only results are printed that have remaining size of at least ${HumanReadable.humanReadableMemorySize(minSizeInBytes)} in last histogram\n" +
+        println("\nBelow only results are printed that have remaining size of at least ${ConversionUtils.humanReadableMemorySize(minSizeInBytes)} in last histogram\n" +
                 "or are on the watch list.")
 
         println("\nNumber of GROW_CRITICAL ${data.heapHistogramDumpSummary.data[GROW_CRITICAL]}")

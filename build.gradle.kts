@@ -1,3 +1,4 @@
+import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
 import org.gradle.jvm.tasks.Jar
 import java.time.Year
 
@@ -6,13 +7,13 @@ version = "1.2.0-SNAPSHOT"
 description = "memory-check"
 
 plugins {
-    id("org.jetbrains.kotlin.jvm") version "1.4.30"
-    kotlin("plugin.serialization") version "1.4.30"
-    id("org.jetbrains.dokka") version "1.4.20"
+    id("org.jetbrains.kotlin.jvm") version "1.4.31"
+    kotlin("plugin.serialization") version "1.4.31"
+    id("org.jetbrains.dokka") version "1.4.30"
     id("com.github.hierynomus.license") version "0.15.0"
-    id("com.vanniktech.maven.publish") version "0.13.0"
+    id("com.vanniktech.maven.publish") version "0.14.2"
     // check dependency updates: ./gradlew dependencyUpdates -Drevision=release
-    id("com.github.ben-manes.versions") version "0.36.0"
+    id("com.github.ben-manes.versions") version "0.38.0"
     application
 }
 
@@ -45,7 +46,7 @@ license {
 }
 
 application {
-    mainClassName = "nl.stokpop.memory.MemoryCheckKt"
+    mainClass.set("nl.stokpop.memory.MemoryCheckKt")
 }
 
 tasks {
@@ -56,6 +57,7 @@ tasks {
 
 val fatJar = task("fatJar", type = Jar::class) {
     archiveBaseName.set("${project.name}-exec")
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     manifest {
         attributes["Implementation-Title"] = "Stokpop Memory Check"
         attributes["Implementation-Version"] = project.version
@@ -64,3 +66,19 @@ val fatJar = task("fatJar", type = Jar::class) {
     from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it).matching { exclude { it.name.contains("MANIFEST") } } })
     with(tasks.jar.get() as CopySpec)
 }
+
+// prevent alpha releases as a suggestion to update in dependencyUpdates
+// see: https://github.com/ben-manes/gradle-versions-plugin#revisions
+fun isNonStable(version: String): Boolean {
+    val stableKeyword = listOf("RELEASE", "FINAL", "GA").any { version.toUpperCase().contains(it) }
+    val regex = "^[0-9,.v-]+(-r)?$".toRegex()
+    val isStable = stableKeyword || regex.matches(version)
+    return isStable.not()
+}
+
+tasks.named<DependencyUpdatesTask>("dependencyUpdates").configure {
+    rejectVersionIf {
+        isNonStable(candidate.version)
+    }
+}
+

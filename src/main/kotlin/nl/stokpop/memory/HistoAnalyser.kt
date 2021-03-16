@@ -93,7 +93,7 @@ object HistoAnalyser {
         if (ghostCount == compareSize) return UNKNOWN
 
         val totalGrowthCount = growthCriticalCount + growthMinorCount
-        val growthPointsPercentage = (totalGrowthCount/histoSize.toDouble()) * 100.0
+        val growthPointsPercentage = (totalGrowthCount/compareSize.toDouble()) * 100.0
         val hasEnoughGrowthPoints = growthPointsPercentage >= minGrowthPointPercentage
 
         if (growthCriticalCount > 0

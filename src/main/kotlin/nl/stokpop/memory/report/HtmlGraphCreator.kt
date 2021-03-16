@@ -15,11 +15,11 @@
  */
 package nl.stokpop.memory.report
 
-import nl.stokpop.memory.HumanReadable
 import nl.stokpop.memory.domain.AnalysisResult
 import nl.stokpop.memory.domain.ClassInfo
 import nl.stokpop.memory.domain.json.ClassHistogramDetails
 import nl.stokpop.memory.domain.json.HeapHistogramDumpReport
+import nl.stokpop.memory.util.ConversionUtils
 import java.io.File
 
 /**
@@ -148,8 +148,7 @@ object HtmlGraphCreator {
             println(message)
             template = "<p>$message<p>"
         } else {
-            template = "###ANALYSIS-RESULT-SUMMARY###".toRegex().replace(template, analysisResultTable(data, reportConfig))
-
+            template = template.replace("###ANALYSIS-RESULT-SUMMARY###", analysisResultTable(data, reportConfig))
 
             val details = data.heapHistogramDumpDetails.classHistogramDetails
             template = createBytesTable(title, timestamps, details, template)
@@ -174,7 +173,7 @@ object HtmlGraphCreator {
         html.append("<tr><td>Overall analysis result</td><td><b>${data.leakResult}</b></td></tr>").append("\n")
         html.append("<tr><td>Report settings</td><td><b>${reportConfig.settings}</b></td></tr>").append("\n")
         html.append("<tr><td>Report class limit</td><td><b>${reportLimits.classLimit}</b></td></tr>").append("\n")
-        html.append("<tr><td>Report byte limit</td><td><b>${HumanReadable.humanReadableMemorySize(reportLimits.byteLimit)}</b></td></tr>").append("\n")
+        html.append("<tr><td>Report byte limit</td><td><b>${ConversionUtils.humanReadableMemorySize(reportLimits.byteLimit)}</b></td></tr>").append("\n")
         html.append("<tr><td>Maximum allowed growth percentage</td><td><b>${reportLimits.maxGrowthPercentage} %</b></td></tr>").append("\n")
         html.append("<tr><td>Minimum growth points percentage</td><td><b>${reportLimits.minGrowthPointsPercentage} %</b></td></tr>").append("\n")
         html.append("<tr><td>Safe list</td><td><b>${reportLimits.safeList}</b></td></tr>").append("\n")
@@ -267,12 +266,12 @@ object HtmlGraphCreator {
         val detailsMapper: (ClassHistogramDetails) -> List<Long?> = { it.bytes }
         val table = createChartDataTable(data, timestamps, detailsMapper)
 
-        newTemplate = "###TABLE_BYTES###".toRegex().replace(newTemplate, Regex.escapeReplacement(table))
-        newTemplate = "###TITLE_BYTES###".toRegex().replace(newTemplate, "bytes in heap - $title")
-        newTemplate = "###H_AXIS_TITLE_BYTES###".toRegex().replace(newTemplate, "time")
-        newTemplate = "###V_AXIS_TITLE_BYTES###".toRegex().replace(newTemplate, "bytes")
-        newTemplate = "###BASE_UNIT_FULL_BYTES###".toRegex().replace(newTemplate, "bytes")
-        newTemplate = "###BASE_UNIT_SHORT_BYTES###".toRegex().replace(newTemplate, "B")
+        newTemplate = newTemplate.replace("###TABLE_BYTES###", table)
+        newTemplate = newTemplate.replace("###TITLE_BYTES###", "bytes in heap - $title")
+        newTemplate = newTemplate.replace("###H_AXIS_TITLE_BYTES###", "time")
+        newTemplate = newTemplate.replace("###V_AXIS_TITLE_BYTES###", "bytes")
+        newTemplate = newTemplate.replace("###BASE_UNIT_FULL_BYTES###", "bytes")
+        newTemplate = newTemplate.replace("###BASE_UNIT_SHORT_BYTES###", "B")
         return newTemplate
     }
 
@@ -282,12 +281,12 @@ object HtmlGraphCreator {
         val detailsMapper: (ClassHistogramDetails) -> List<Long?> = { it.bytesDiff }
         val table = createChartDataTable(data, timestamps, detailsMapper)
 
-        newTemplate = "###TABLE_BYTES_DIFF###".toRegex().replace(newTemplate, Regex.escapeReplacement(table))
-        newTemplate = "###TITLE_BYTES_DIFF###".toRegex().replace(newTemplate, "bytes diff in heap - $title")
-        newTemplate = "###H_AXIS_TITLE_BYTES_DIFF###".toRegex().replace(newTemplate, "time")
-        newTemplate = "###V_AXIS_TITLE_BYTES_DIFF###".toRegex().replace(newTemplate, "bytes diff")
-        newTemplate = "###BASE_UNIT_FULL_BYTES_DIFF###".toRegex().replace(newTemplate, "bytes")
-        newTemplate = "###BASE_UNIT_SHORT_BYTES_DIFF###".toRegex().replace(newTemplate, "B")
+        newTemplate = newTemplate.replace("###TABLE_BYTES_DIFF###", table)
+        newTemplate = newTemplate.replace("###TITLE_BYTES_DIFF###", "bytes diff in heap - $title")
+        newTemplate = newTemplate.replace("###H_AXIS_TITLE_BYTES_DIFF###", "time")
+        newTemplate = newTemplate.replace("###V_AXIS_TITLE_BYTES_DIFF###", "bytes diff")
+        newTemplate = newTemplate.replace("###BASE_UNIT_FULL_BYTES_DIFF###", "bytes")
+        newTemplate = newTemplate.replace("###BASE_UNIT_SHORT_BYTES_DIFF###", "B")
         return newTemplate
     }
 
@@ -297,12 +296,12 @@ object HtmlGraphCreator {
         val detailsMapper: (ClassHistogramDetails) -> List<Long?> = { it.instances }
         val table = createChartDataTable(data, timestamps, detailsMapper)
 
-        newTemplate = "###TABLE_INSTANCES###".toRegex().replace(newTemplate, Regex.escapeReplacement(table))
-        newTemplate = "###TITLE_INSTANCES###".toRegex().replace(newTemplate,"instances in heap - $title")
-        newTemplate = "###H_AXIS_TITLE_INSTANCES###".toRegex().replace(newTemplate,"time")
-        newTemplate = "###V_AXIS_TITLE_INSTANCES###".toRegex().replace(newTemplate,"instances")
-        newTemplate = "###BASE_UNIT_FULL_INSTANCES###".toRegex().replace(newTemplate,"instances")
-        newTemplate = "###BASE_UNIT_SHORT_INSTANCES###".toRegex().replace(newTemplate,"#")
+        newTemplate = newTemplate.replace("###TABLE_INSTANCES###", table)
+        newTemplate = newTemplate.replace("###TITLE_INSTANCES###","instances in heap - $title")
+        newTemplate = newTemplate.replace("###H_AXIS_TITLE_INSTANCES###","time")
+        newTemplate = newTemplate.replace("###V_AXIS_TITLE_INSTANCES###","instances")
+        newTemplate = newTemplate.replace("###BASE_UNIT_FULL_INSTANCES###","instances")
+        newTemplate = newTemplate.replace("###BASE_UNIT_SHORT_INSTANCES###","#")
         return newTemplate
     }
 
@@ -312,12 +311,12 @@ object HtmlGraphCreator {
         val detailsMapper: (ClassHistogramDetails) -> List<Long?> = { it.instancesDiff }
         val table = createChartDataTable(data, timestamps, detailsMapper)
 
-        newTemplate = "###TABLE_INSTANCES_DIFF###".toRegex().replace(newTemplate, Regex.escapeReplacement(table))
-        newTemplate = "###TITLE_INSTANCES_DIFF###".toRegex().replace(newTemplate, "instances diff in heap - $title")
-        newTemplate = "###H_AXIS_TITLE_INSTANCES_DIFF###".toRegex().replace(newTemplate, "time")
-        newTemplate = "###V_AXIS_TITLE_INSTANCES_DIFF###".toRegex().replace(newTemplate, "instances diff")
-        newTemplate = "###BASE_UNIT_FULL_INSTANCES_DIFF###".toRegex().replace(newTemplate, "instances")
-        newTemplate = "###BASE_UNIT_SHORT_INSTANCES_DIFF###".toRegex().replace(newTemplate, "#")
+        newTemplate = newTemplate.replace("###TABLE_INSTANCES_DIFF###", table)
+        newTemplate = newTemplate.replace("###TITLE_INSTANCES_DIFF###", "instances diff in heap - $title")
+        newTemplate = newTemplate.replace("###H_AXIS_TITLE_INSTANCES_DIFF###", "time")
+        newTemplate = newTemplate.replace("###V_AXIS_TITLE_INSTANCES_DIFF###", "instances diff")
+        newTemplate = newTemplate.replace("###BASE_UNIT_FULL_INSTANCES_DIFF###", "instances")
+        newTemplate = newTemplate.replace("###BASE_UNIT_SHORT_INSTANCES_DIFF###", "#")
         return newTemplate
     }
 

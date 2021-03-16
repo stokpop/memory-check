@@ -26,13 +26,13 @@ internal class HistoAnalyserTest {
     @Test
     fun analyseGrowthNoElement() {
         val histoLines: List<HeapHistogramDumpLine> = emptyList()
-        assertEquals(AnalysisResult.SHRINK_AND_GROW, HistoAnalyser.analyseGrowth(histoLines))
+        assertEquals(AnalysisResult.UNKNOWN, HistoAnalyser.analyseGrowth(histoLines))
     }
 
     @Test
     fun analyseGrowthOneElement() {
         val histoLines = listOf(HeapHistogramDumpLine(ClassInfo("abc"), 1, 1, 1))
-        assertEquals(AnalysisResult.SHRINK_AND_GROW, HistoAnalyser.analyseGrowth(histoLines))
+        assertEquals(AnalysisResult.UNKNOWN, HistoAnalyser.analyseGrowth(histoLines))
     }
 
     @Test
@@ -88,7 +88,7 @@ internal class HistoAnalyserTest {
                 HeapHistogramDumpLine(ClassInfo("abc"), 1, 1, 1),
                 HeapHistogramDumpLine.createGhostLine(ClassInfo("abc"))
         )
-        assertEquals(AnalysisResult.SHRINK_AND_GROW, HistoAnalyser.analyseGrowth(histoLines))
+        assertEquals(AnalysisResult.UNKNOWN, HistoAnalyser.analyseGrowth(histoLines))
     }
 
     @Test
@@ -98,7 +98,7 @@ internal class HistoAnalyserTest {
                 HeapHistogramDumpLine.createGhostLine(ClassInfo("abc")),
                 HeapHistogramDumpLine(ClassInfo("abc"), 1, 2, 1)
         )
-        assertEquals(AnalysisResult.SHRINK_AND_GROW, HistoAnalyser.analyseGrowth(histoLines))
+        assertEquals(AnalysisResult.GROW_CRITICAL, HistoAnalyser.analyseGrowth(histoLines))
     }
 
     @Test
@@ -109,7 +109,7 @@ internal class HistoAnalyserTest {
                 HeapHistogramDumpLine(ClassInfo("abc"), 1, 2, 1),
                 HeapHistogramDumpLine.createGhostLine(ClassInfo("abc"))
         )
-        assertEquals(AnalysisResult.SHRINK_AND_GROW, HistoAnalyser.analyseGrowth(histoLines))
+        assertEquals(AnalysisResult.UNKNOWN, HistoAnalyser.analyseGrowth(histoLines))
     }
 
 }
