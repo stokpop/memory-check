@@ -20,8 +20,6 @@ jobs:
         run: |
           echo "$SECRETS_PROPERTIES" | base64 -d > ./gradle.properties
           echo "$SECRING_ASC_GPG" | base64 -d > ./secring.asc.gpg
-      - name: Build with Gradle
-        run: ./gradlew --info clean build
       - name: Upload archives with Gradle
         run: ./gradlew --info -Prelease uploadArchives
       - name: Close and release repository with Gradle
