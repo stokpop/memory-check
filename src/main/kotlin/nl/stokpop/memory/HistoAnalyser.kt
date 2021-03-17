@@ -42,7 +42,15 @@ object HistoAnalyser {
         val histosForClassName = dumps
             .map { dump -> dump.histogram.firstOrNull { name == it.classInfo } ?: createGhostLine(name) }
             .toList()
-        return ClassGrowth(name, histosForClassName, analyseGrowth(histosForClassName, name.isOnSafeList, config.reportLimits.maxGrowthPercentage, config.reportLimits.minGrowthPointsPercentage) { it.bytes })
+
+        val analyseGrowth = analyseGrowth(
+            histosForClassName,
+            name.isOnSafeList,
+            config.reportLimits.maxGrowthPercentage,
+            config.reportLimits.minGrowthPointsPercentage
+        ) { it.bytes }
+
+        return ClassGrowth(name, histosForClassName, analyseGrowth)
     }
 
     fun analyseGrowth(
@@ -50,7 +58,7 @@ object HistoAnalyser {
         isSafeToGrow: Boolean = false,
         maxGrowthPercentage: Double = 10.0,
         minGrowthPointPercentage: Double = 50.0,
-        thingToCheck: (HeapHistogramDumpLine) -> Long? = { it.instances }): AnalysisResult {
+        thingToCheck: (HeapHistogramDumpLine) -> Long? = { it.bytes }): AnalysisResult {
 
         if (histoLines.isEmpty()) return UNKNOWN
 

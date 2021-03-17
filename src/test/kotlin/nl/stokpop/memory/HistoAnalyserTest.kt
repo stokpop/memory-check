@@ -66,7 +66,7 @@ internal class HistoAnalyserTest {
     @Test
     fun analyseGrowthTwoElementsShrink() {
         val histoLines = listOf(
-                HeapHistogramDumpLine(ClassInfo("abc"), 1, 2, 1),
+                HeapHistogramDumpLine(ClassInfo("abc"), 1, 2, 2),
                 HeapHistogramDumpLine(ClassInfo("abc"), 1, 1, 1)
         )
         assertEquals(AnalysisResult.SHRINK, HistoAnalyser.analyseGrowth(histoLines))
@@ -76,7 +76,7 @@ internal class HistoAnalyserTest {
     fun analyseGrowthThreeElementsShrinkAndGrow() {
         val histoLines = listOf(
                 HeapHistogramDumpLine(ClassInfo("abc"), 1, 1, 1),
-                HeapHistogramDumpLine(ClassInfo("abc"), 1, 2, 1),
+                HeapHistogramDumpLine(ClassInfo("abc"), 1, 2, 2),
                 HeapHistogramDumpLine(ClassInfo("abc"), 1, 1, 1)
         )
         assertEquals(AnalysisResult.SHRINK_AND_GROW, HistoAnalyser.analyseGrowth(histoLines))
@@ -96,7 +96,7 @@ internal class HistoAnalyserTest {
         val histoLines = listOf(
                 HeapHistogramDumpLine(ClassInfo("abc"), 1, 1, 1),
                 HeapHistogramDumpLine.createGhostLine(ClassInfo("abc")),
-                HeapHistogramDumpLine(ClassInfo("abc"), 1, 2, 1)
+                HeapHistogramDumpLine(ClassInfo("abc"), 1, 2, 2)
         )
         assertEquals(AnalysisResult.GROW_CRITICAL, HistoAnalyser.analyseGrowth(histoLines))
     }
@@ -106,10 +106,23 @@ internal class HistoAnalyserTest {
         // should this test fail? if we interpret that class in totally not there at last step: no leak?
         val histoLines = listOf(
                 HeapHistogramDumpLine(ClassInfo("abc"), 1, 1, 1),
-                HeapHistogramDumpLine(ClassInfo("abc"), 1, 2, 1),
+                HeapHistogramDumpLine(ClassInfo("abc"), 1, 2, 2),
                 HeapHistogramDumpLine.createGhostLine(ClassInfo("abc"))
         )
         assertEquals(AnalysisResult.UNKNOWN, HistoAnalyser.analyseGrowth(histoLines))
+    }
+
+    @Test
+    fun analyseGrowthHickUps() {
+        val histoLines = listOf(
+                HeapHistogramDumpLine(ClassInfo("abc"), 1, 1, 1),
+                HeapHistogramDumpLine.createGhostLine(ClassInfo("abc")),
+                HeapHistogramDumpLine.createGhostLine(ClassInfo("abc")),
+                HeapHistogramDumpLine.createGhostLine(ClassInfo("abc")),
+                HeapHistogramDumpLine(ClassInfo("abc"), 1, 2, 2),
+                HeapHistogramDumpLine(ClassInfo("abc"), 1, 3, 3)
+        )
+        assertEquals(AnalysisResult.GROW_HICK_UPS, HistoAnalyser.analyseGrowth(histoLines))
     }
 
 }

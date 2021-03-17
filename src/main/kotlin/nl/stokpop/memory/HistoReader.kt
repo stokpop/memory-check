@@ -25,9 +25,8 @@ import java.time.LocalDateTime
 
 object HistoReader {
 
-
-    val isoDateRegex = """\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?""".toRegex()
-    val spacesRegex = "\\s+".toRegex()
+    private val isoDateRegex = """\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?""".toRegex()
+    private val spacesRegex = "\\s+".toRegex()
 
     fun readHistos(histoFiles: List<File>, safeGrowList: SafeList, watchList: WatchList): List<HeapHistogramDump> {
         return histoFiles
@@ -38,8 +37,9 @@ object HistoReader {
     }
 
     /**
-     * Now uses file creation date. We might also parse filename for a date.
+     * First check the filename to contain a ISO date and uses that as a timestamp.
      * Filename should contain an ISO formatted date like: 2020-06-17T22:25:38.960921
+     * If not found, uses file creation date or file last modified as last resort.
      */
     private fun dateForHistoFile(file: File): LocalDateTime {
         return extractDate(file.name) ?: dateForHistoFileFromAttrinutes(file)

@@ -40,7 +40,7 @@ class MemoryCheckCli : CliktCommand() {
     private val reportDirectory: String by option("-r", "--report-dir", help = "Full or relative path to directory for the reports, example: '.' for current directory").default(".")
     private val classLimit: Int by option("-c", "--class-limit", help = "Report only the top 'limit' classes, example: '128'.").int().default(128)
     private val bytesLimit: String by option("-b", "--bytes-limit", help = "Report class only when last dump has at least x bytes, example: '2048' or '2KB'").default("2048")
-    private val settings: String by option("-s", "--settings", help = "Comma separated file with categories to report: grow_critical,grow_minor,grow_safe,shrink,unknown,stable. Default: 'grow_critical,grow_minor'").default("grow_critical,grow_minor")
+    private val categories: String by option("-cat", "--categories", help = "Comma separated file with categories to report: 'grow_critical, grow_minor, grow_safe, grow_hick_ups, shrink_and_grow, shrink, stable, unknown'. Or 'all'. Default: 'grow_critical,grow_minor'").default("grow_critical,grow_minor")
     private val maxGrowthPercentage: Double by option("-mgp", "--max-growth-percentage", help = "Maximum allowed growth in percentage before reporting a critical growth. Default: 5.0").double().default(5.0)
     private val minGrowthPointsPercentage: Double by option("-mgpp", "--min-growth-points-percentage", help = "Minimum percentage of growth points to be considered growth. Default: 50.0").double().default(50.0)
     private val safeList: String by option("-sl", "--safe-list", help = "Comma separated list of fully qualified classnames that are 'safe to growth'. The asterisk (*) can be used as wildcard. Default: \"\"").default("")
@@ -56,10 +56,11 @@ class MemoryCheckCli : CliktCommand() {
         val timestampRegex = "#ts#".toRegex()
         val processedId = if (timestampRegex.containsMatchIn(identifier)) timestampRegex.replace(identifier, reportDateTime) else identifier
 
-        val reportSettings = settings.split(',')
-            .map { s -> s.toUpperCase() }
-            .mapNotNull { s -> parseAnalysisResult(s) }
-            .toSet()
+        val reportSettings = if (categories.toLowerCase() == "all") AnalysisResult.values().toSet()
+            else categories.split(',')
+                .map { s -> s.toUpperCase() }
+                .mapNotNull { s -> parseAnalysisResult(s) }
+                .toSet()
 
         val safeGrowSetOption = safeList.split(",").filter { it.isNotEmpty() }.toSet()
         val watchSetOption = HashSet(watchList.split(",").filter { it.isNotEmpty() }.toSet())

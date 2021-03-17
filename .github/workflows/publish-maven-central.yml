@@ -33,5 +33,5 @@ jobs:
         run: ./gradlew --info -Prelease closeAndReleaseRepository
       - name: Delete secrets
         run: |
-          rm ./.gradle/gradle.properties
+          rm ./gradle.properties
           rm ./secring.asc.gpg
