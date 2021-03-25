@@ -7,8 +7,8 @@ version = file("VERSION").readText().trim()
 description = "memory-check"
 
 plugins {
-    id("org.jetbrains.kotlin.jvm") version "1.4.31"
-    kotlin("plugin.serialization") version "1.4.31"
+    id("org.jetbrains.kotlin.jvm") version "1.4.32"
+    kotlin("plugin.serialization") version "1.4.32"
     id("org.jetbrains.dokka") version "1.4.30"
     id("com.github.hierynomus.license") version "0.15.0"
     id("com.vanniktech.maven.publish") version "0.14.2"
@@ -24,7 +24,7 @@ repositories {
 dependencies {
     implementation(platform("org.jetbrains.kotlin:kotlin-bom"))
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-runtime:1.0-M1-1.4.0-rc-218")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.1.0")
     implementation("com.github.ajalt.clikt:clikt:3.1.0")
     testImplementation("org.jetbrains.kotlin:kotlin-test")
     testImplementation("org.jetbrains.kotlin:kotlin-test-junit")

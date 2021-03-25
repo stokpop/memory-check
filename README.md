@@ -149,7 +149,7 @@ Classes can be added to the watch-list via comma separated command line or via a
 Example call:
 
 ```text
-java -jar memory-check-exec-1.2.0.jar \
+java -jar memory-check-exec-1.2.1.jar \
   --dir /path/to/jvm-histograms/ \
   --ext histo \
   --id duration-test-123-#ts# \
