@@ -49,6 +49,8 @@ object TextReport {
         println("Number of SHRINK_AND_GROW ${data.heapHistogramDumpSummary.data[SHRINK_AND_GROW]}")
         println("Number of STABLE ${data.heapHistogramDumpSummary.data[STABLE]}")
         println("Number of SHRINK ${data.heapHistogramDumpSummary.data[SHRINK]}")
+        println("Number of SINGLE ${data.heapHistogramDumpSummary.data[SINGLE]}")
+        println("Number of UNKNOWN ${data.heapHistogramDumpSummary.data[UNKNOWN]}")
 
         val details = data.heapHistogramDumpDetails.classHistogramDetails.asSequence()
 
@@ -91,6 +93,12 @@ object TextReport {
         if (data.reportLimits.doReportStable) {
             println("\n\nFound stable:")
             details.filter { it.analysis == STABLE }
+                    .forEach { reportLine(it) }
+        }
+
+        if (data.reportLimits.doReportSingle) {
+            println("\n\nFound singles:")
+            details.filter { it.analysis == SINGLE }
                     .forEach { reportLine(it) }
         }
 

@@ -23,5 +23,7 @@ enum class AnalysisResult(val description: String) {
     SHRINK_AND_GROW("both shrink and growth detected"),
     STABLE("all histograms show same number of objects"),
     SHRINK("opposite of growth: only shrinks detected"),
+    SINGLE("present in one histogram only (probably a temporary class such as a lambda)"),
     UNKNOWN("no matching analysis result");
+
 }

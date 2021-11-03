@@ -237,6 +237,7 @@ object HtmlGraphCreator {
             AnalysisResult.SHRINK_AND_GROW -> arrowUpDown
             AnalysisResult.SHRINK -> arrowDown
             AnalysisResult.STABLE -> arrowFlat
+            AnalysisResult.SINGLE -> '1'
             AnalysisResult.UNKNOWN -> '?'
         }
     }
@@ -250,6 +251,7 @@ object HtmlGraphCreator {
             AnalysisResult.SHRINK_AND_GROW -> "magenta"
             AnalysisResult.SHRINK -> "dark-gray"
             AnalysisResult.STABLE -> "black"
+            AnalysisResult.SINGLE -> "black"
             AnalysisResult.UNKNOWN -> "light-gray"
         }
         return "<div style='color:$color'>${mapToUnicodeArrow(analysis)}</div>"

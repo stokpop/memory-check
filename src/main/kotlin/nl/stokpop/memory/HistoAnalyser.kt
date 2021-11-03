@@ -60,10 +60,14 @@ object HistoAnalyser {
         minGrowthPointPercentage: Double = 50.0,
         thingToCheck: (HeapHistogramDumpLine) -> Long? = { it.bytes }): AnalysisResult {
 
-        if (histoLines.isEmpty()) return UNKNOWN
+        if (histoLines.isEmpty()) {
+            return UNKNOWN
+        }
 
         val histoSize = histoLines.size
-        if (histoSize == 1) return UNKNOWN
+        if (histoSize == 1) {
+            return SINGLE
+        }
         val compareSize = histoSize - 1
 
         // assume the lines are ordered in time
@@ -98,7 +102,13 @@ object HistoAnalyser {
             lastValue = currentValue
         }
 
-        if (ghostCount == compareSize) return UNKNOWN
+        if (ghostCount == compareSize) {
+            return if (ghostCount == histoSize - 1) {
+                SINGLE
+            } else {
+                UNKNOWN
+            }
+        }
 
         val totalGrowthCount = growthCriticalCount + growthMinorCount
         val growthPointsPercentage = (totalGrowthCount/compareSize.toDouble()) * 100.0
@@ -115,7 +125,9 @@ object HistoAnalyser {
             return if (hasEnoughGrowthPoints) { if (isSafeToGrow) GROW_SAFE else GROW_MINOR } else GROW_HICK_UPS
         }
 
-        if (totalGrowthCount + ghostCount == compareSize && lastIsGhost) return UNKNOWN
+        if (totalGrowthCount + ghostCount == compareSize && lastIsGhost) {
+            return UNKNOWN
+        }
         if (shrinkCount > 0 && shrinkCount + ghostCount + stableCount == compareSize) return SHRINK
         if (stableCount + ghostCount == compareSize) return STABLE
 

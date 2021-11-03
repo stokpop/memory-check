@@ -32,7 +32,7 @@ internal class HistoAnalyserTest {
     @Test
     fun analyseGrowthOneElement() {
         val histoLines = listOf(HeapHistogramDumpLine(ClassInfo("abc"), 1, 1, 1))
-        assertEquals(AnalysisResult.UNKNOWN, HistoAnalyser.analyseGrowth(histoLines))
+        assertEquals(AnalysisResult.SINGLE, HistoAnalyser.analyseGrowth(histoLines))
     }
 
     @Test
@@ -88,7 +88,7 @@ internal class HistoAnalyserTest {
                 HeapHistogramDumpLine(ClassInfo("abc"), 1, 1, 1),
                 HeapHistogramDumpLine.createGhostLine(ClassInfo("abc"))
         )
-        assertEquals(AnalysisResult.UNKNOWN, HistoAnalyser.analyseGrowth(histoLines))
+        assertEquals(AnalysisResult.SINGLE, HistoAnalyser.analyseGrowth(histoLines))
     }
 
     @Test

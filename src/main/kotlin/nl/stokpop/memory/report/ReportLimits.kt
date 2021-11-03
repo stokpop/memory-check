@@ -31,4 +31,5 @@ class ReportLimits(
     val doReportGrowHickUps: Boolean = false,
     val doReportShrinkAndGrow: Boolean = false,
     val doReportShrinks: Boolean = false,
+    val doReportSingle: Boolean = false,
     val doReportStable: Boolean = false)
