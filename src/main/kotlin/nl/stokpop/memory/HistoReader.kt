@@ -22,11 +22,22 @@ import java.nio.file.Files
 import java.nio.file.attribute.BasicFileAttributes
 import java.time.Instant
 import java.time.LocalDateTime
+import java.time.format.DateTimeFormatterBuilder
 
 object HistoReader {
 
-    private val isoDateRegex = """\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(\.\d+)?""".toRegex()
-    private val spacesRegex = "\\s+".toRegex()
+    private val dateRegex = """\d{4}-\d{2}-\d{2}T\d{2}[-_:]\d{2}[-_:]\d{2}(\.\d+)?""".toRegex()
+
+    // if you use yyyy, exception: Unable to obtain LocalDateTime from TemporalAccessor
+    private val datePattern = DateTimeFormatterBuilder()
+        .appendPattern("uuuu-MM-dd'T'HH-mm-ss")
+        .optionalStart()
+        .appendPattern(".SSSSSS")
+        .optionalEnd()
+        .toFormatter()
+
+    // include unicode characters
+    private val spacesRegex = "(?U)\\s+".toRegex()
 
     fun readHistos(histoFiles: List<File>, safeGrowList: SafeList, watchList: WatchList): List<HeapHistogramDump> {
         return histoFiles
@@ -37,8 +48,8 @@ object HistoReader {
     }
 
     /**
-     * First check the filename to contain a ISO date and uses that as a timestamp.
-     * Filename should contain an ISO formatted date like: 2020-06-17T22:25:38.960921
+     * First check the filename to contain a proper date and uses that as a timestamp.
+     * Filename should contain a formatted date like: 2020-06-17T22-25-38.960921
      * If not found, uses file creation date or file last modified as last resort.
      */
     private fun dateForHistoFile(file: File): LocalDateTime {
@@ -79,15 +90,22 @@ object HistoReader {
         val instances = split[1]
         val bytes = split[2]
         val name = split[3]
-        return HeapHistogramDumpLine(classInfo = ClassInfo(name, safeList.matches(name), watchList.matches(name)), lineNumber = lineNumber.toLong(), instances = instances.toLong(), bytes = bytes.toLong())
+        return HeapHistogramDumpLine(
+            classInfo = ClassInfo(name, safeList.matches(name), watchList.matches(name)),
+            lineNumber = lineNumber.toLong(),
+            instances = instances.toLong(),
+            bytes = bytes.toLong()
+        )
     }
 
     private fun skipLastCharacter(s: String) = s.substring(0, s.length - 1)
 
     fun extractDate(s: String): LocalDateTime? {
-        if (isoDateRegex.containsMatchIn(s)) {
-            val dateString = isoDateRegex.find(s)?.value
-            return LocalDateTime.parse(dateString)
+        if (dateRegex.containsMatchIn(s)) {
+            // !! because of the containsMatchIn
+            val dateString = dateRegex.find(s)!!.value
+            val cleanedDateString = dateString.replace("[_:]".toRegex(), "-")
+            return LocalDateTime.parse(cleanedDateString, datePattern)
         }
         return null
     }

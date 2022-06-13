@@ -22,7 +22,8 @@ import org.junit.jupiter.api.Test
 internal class HistoReaderTest {
 
     @Test
-    fun extractDate() {
+    fun extractDateLegacy() {
+        // used to have : in time for ISO standard 8601
         val dateTime = HistoReader.extractDate("lsdkfjgldfk 2020-06-17T22:25:38.960921 ldkfgldjkfs")
         assertNotNull(dateTime)
         assertEquals(2020, dateTime?.year)
@@ -32,8 +33,19 @@ internal class HistoReaderTest {
     }
 
     @Test
+    fun extractDateUnderscores() {
+        // seems : were replaced by _ in filenames when going from linux to windows
+        val dateTime = HistoReader.extractDate("lsdkfjgldfk 2020-06-17T22_25_38.960921 ldkfgldjkfs")
+        assertNotNull(dateTime)
+        assertEquals(2020, dateTime?.year)
+        assertEquals(22, dateTime?.hour)
+        assertEquals(38, dateTime?.second)
+        assertEquals(960921000, dateTime?.nano)
+    }
+
+    @Test
     fun extractDateWithoutNanos() {
-        val dateTime = HistoReader.extractDate("lsdkfjgldfk 2020-06-17T22:25:38 ldkfgldjkfs")
+        val dateTime = HistoReader.extractDate("lsdkfjgldfk 2020-06-17T22-25-38 ldkfgldjkfs")
         assertNotNull(dateTime)
         assertEquals(2020, dateTime?.year)
         assertEquals(22, dateTime?.hour)

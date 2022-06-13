@@ -7,7 +7,7 @@ Sponsored by Rabobank.
 # Quick start
 
 Point to a directory with histogram-dumps and the file extension used for the histogram files.
-In this example the files are called `memory-dump-2021-03-03T00:30:52.435.histo`. 
+In this example the files are called `memory-dump-2021-03-03T00-30-52.435.histo`. 
 How to create multiple histograms over time is described below.
 
     java -jar memory-check-exec.jar -d /path/to/histo-dumps -e histo
@@ -16,16 +16,16 @@ How to create multiple histograms over time is described below.
 
 The analysis result categories are:
 
-|analysis result|count|icon|description|
-|---------------|-----|----|-----------|
-|GROW_CRITICAL|61|▲|critical growth detected (above 'maximum allowed growth percentage')
-|GROW_MINOR|3|⇧|minor growth detected (below 'maximum allowed growth percentage')
-|GROW_SAFE|4|↑|growth detected in 'safe list' of known growing classes
-|GROW_HICK_UPS|28|⥣|growth with hick-ups (less than 'minimum growth points percentage')
-|SHRINK_AND_GROW|320|↕|	both shrink and growth detected
-|STABLE|533|↔|all histograms show same number of objects
-|SHRINK|2|↓|opposite of growth: only shrinks detected
-|UNKNOWN|0|?|no matching analysis result
+| analysis result | count | icon | description                                                           |
+|-----------------|-------|------|-----------------------------------------------------------------------|
+| GROW_CRITICAL   | 61    | ▲    | critical growth detected (above 'maximum allowed growth percentage')  |
+| GROW_MINOR      | 3     | ⇧    | minor growth detected (below 'maximum allowed growth percentage')     |
+| GROW_SAFE       | 4     | ↑    | growth detected in 'safe list' of known growing classes               |
+| GROW_HICK_UPS   | 28    | ⥣    | growth with hick-ups (less than 'minimum growth points percentage')   |
+| SHRINK_AND_GROW | 320   | ↕    | both shrink and growth detected                                       |
+| STABLE          | 533   | ↔    | all histograms show same number of objects                            |
+| SHRINK          | 2     | ↓    | opposite of growth: only shrinks detected                             |
+| UNKNOWN         | 0     | ?    | no matching analysis result                                           |
 
 # Concepts
 
@@ -212,7 +212,7 @@ meaning that objects are created but not removed.
 
 Use the following command to dump the live objects of a java process.
 
-    jmap -histo:live $JAVA_PID > memory-dump-$(date +%Y-%m-%dT%H:%M:%S).histo
+    jmap -histo:live $JAVA_PID > memory-dump-$(date +%Y-%m-%dT%H-%M-%S).histo
     
 Generate 4 dumps with 10 seconds apart for application-name:
 
@@ -220,7 +220,7 @@ Generate 4 dumps with 10 seconds apart for application-name:
     
 Generate histogram via jmx:
 
-    java -cp memory-check-exec.jar nl.stokpop.jmx.FetchHistogramKt localhost 5000 > memory-dump-$(date +%Y-%m-%dT%H:%M:%S).histo
+    java -cp memory-check-exec.jar nl.stokpop.jmx.FetchHistogramKt localhost 5000 > memory-dump-$(date +%Y-%m-%dT%H-%M-%S).histo
     
 Enable jmx on your java process by adding these jvm options:
 
@@ -232,17 +232,17 @@ Make sure there is a timestamp in the dump filename that memory-check can use to
 time of the dump. If not found in the filename it will try to use the creation date file attribute,
 but that might not always be correct, for example after a file copy. Use the following format:
 
-    yyyy-MM-ddTHH:mm:ss(.SSS)
+    yyyy-MM-ddTHH-mm-ss(.SSS)
 
 Optionally you can also add milliseconds/nanoseconds for better precision. Example filename:
 
-    memory-dump-2020-06-17T17:52:32.433463.histo
+    memory-dump-2020-06-17T17-52-32.433463.histo
 
 # Histogram file names
 
 Memory-check first checks the filename to contain a ISO date and uses that as a timestamp
 for the histogram dump. The filename should contain an ISO formatted date like: 
-`2020-06-17T22:25:38.960921`
+`2020-06-17T22-25-38.960921`
 If not found, uses file creation date or file last modified as last resort.
 Be very careful that these times are correct! It is adviced to always use timestamps
 in the filenames.
