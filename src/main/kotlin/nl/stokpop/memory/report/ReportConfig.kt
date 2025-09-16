@@ -27,4 +27,7 @@ class ReportConfig(
     val extension: String,
     val identifier: String,
     val reportDateTime: String,
-    val reportLimits: ReportLimits)
+    val reportLimits: ReportLimits,
+    val reportUsedFiles: Boolean = false,
+    val safeListFilePath: String? = null,
+    val watchListFilePath: String? = null)

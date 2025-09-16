@@ -208,6 +208,37 @@ meaning that objects are created but not removed.
 
 ![screen shot of bytes-diff graph](images/bytes-diff-mem-leak-example-highlites.png?raw=true "bytes-diff graph")
 
+## Report used files (optional)
+
+You can include the list of files that were used to build the report (all processed histogram files and optional safe/watch list files) by adding the `--report-used-files` flag.
+
+- HTML: a "Used files" section is added near the summary, listing the file names.
+- JSON: a `usedFiles` object is added at the root with:
+  - `histogramFiles`: array of absolute paths
+  - `safeListFile`: optional absolute path
+  - `watchListFile`: optional absolute path
+
+Example:
+
+```json
+{
+  "usedFiles": {
+    "histogramFiles": [
+      "/path/to/histos/dump-1.histo",
+      "/path/to/histos/dump-2.histo"
+    ],
+    "safeListFile": "/path/to/safe-list.txt",
+    "watchListFile": "/path/to/watch-list.txt"
+  }
+}
+```
+
+To enable in CLI:
+
+```text
+--report-used-files
+```
+
 # Generate histogram dump
 
 Use the following command to dump the live objects of a java process.
@@ -250,46 +281,28 @@ in the filenames.
 # Usage
 
 ```text
-Usage: memory-check-cli [OPTIONS]
+Usage: memory-check-cli [<options>]
 
 Options:
-  -d, --dir TEXT                   Look in this directory for heap histogram
-                                   dumps.
-  -e, --ext TEXT                   Only process files with this extension,
-                                   example: 'histo'
-  -i, --id TEXT                    Identifier for the report, example:
-                                   'test-run-1234'. Include #ts# for a
-                                   timestamp.
-  -r, --report-dir TEXT            Full or relative path to directory for the
-                                   reports, example: '.' for current directory
-  -c, --class-limit INT            Report only the top 'limit' classes,
-                                   example: '128'.
-  -b, --bytes-limit TEXT           Report class only when last dump has at
-                                   least x bytes, example: '2048' or '2KB'
-  -cat, --categories TEXT          Comma separated file with categories to
-                                   report: 'grow_critical, grow_minor,
-                                   grow_safe, grow_hick_ups, shrink_and_grow,
-                                   shrink, stable, unknown'. Or 'all'.
-                                   Default: 'grow_critical,grow_minor'
-  -mgp, --max-growth-percentage FLOAT
-                                   Maximum allowed growth in percentage before
-                                   reporting a critical growth. Default: 5.0
-  -mgpp, --min-growth-points-percentage FLOAT
-                                   Minimum percentage of growth points to be
-                                   considered growth. Default: 50.0
-  -sl, --safe-list TEXT            Comma separated list of fully qualified
-                                   classnames that are 'safe to growth'. The
-                                   asterisk (*) can be used as wildcard.
-                                   Default: ""
-  -wl, --watch-list TEXT           Comma separated list of fully qualified
-                                   classnames that are 'always watched'
-                                   irrelevant of other settings. The asterisk
-                                   (*) can be used as wildcard. Default: ""
-  -slf, --safe-list-file PATH      The safe list file. Should contain one
-                                   fully qualified classname per line.
-  -wlf, --watch-list-file PATH     The safe list file. Should contain one
-                                   fully qualified classname per line.
-  -h, --help                       Show this message and exit
+  -d, --dir=<text>                               Look in this directory for heap histogram dumps.
+  -e, --ext=<text>                               Only process files with this extension, example: 'histo'
+  -i, --id=<text>                                Identifier for the report, example: 'test-run-1234'. Include #ts# for a timestamp.
+  -r, --report-dir=<text>                        Full or relative path to directory for the reports, example: '.' for current directory
+  -c, --class-limit=<int>                        Report only the top 'limit' classes, example: '128'.
+  -b, --bytes-limit=<text>                       Report class only when last dump has at least x bytes, example: '2048' or '2KB'
+  -cat, --categories=<text>                      Comma separated file with categories to report: 'grow_critical, grow_minor, grow_safe,
+                                                 grow_hick_ups, shrink_and_grow, shrink, stable, unknown'. Or 'all'. Default:
+                                                 'grow_critical,grow_minor'
+  -mgp, --max-growth-percentage=<float>          Maximum allowed growth in percentage before reporting a critical growth. Default: 5.0
+  -mgpp, --min-growth-points-percentage=<float>  Minimum percentage of growth points to be considered growth. Default: 50.0
+  -sl, --safe-list=<text>                        Comma separated list of fully qualified classnames that are 'safe to growth'. The asterisk (*)
+                                                 can be used as wildcard. Default: ""
+  -wl, --watch-list=<text>                       Comma separated list of fully qualified classnames that are 'always watched' irrelevant of other
+                                                 settings. The asterisk (*) can be used as wildcard. Default: ""
+  -slf, --safe-list-file=<path>                  The safe list file. Should contain one fully qualified classname per line.
+  -wlf, --watch-list-file=<path>                 The safe list file. Should contain one fully qualified classname per line.
+  -ruf, --report-used-files                      Include the list of used files (histograms, safe/watch list files) in the JSON and HTML reports.
+  -h, --help                                     Show this message and exit
 ```
 
 # Build executable jar

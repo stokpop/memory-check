@@ -107,7 +107,10 @@ object TextReport {
 
     private fun reportLine(details: ClassHistogramDetails) {
         val classInfo = details.classInfo
-        print("${ClassInfo.prefixWatchListAndSafeList(classInfo)}${classInfo.name} ")
+        val bytesLastDump = details.bytes.lastOrNull()?.let { ConversionUtils.humanReadableMemorySize(it) } ?: "Unknown"
+        val instancesLastDump = details.instances.lastOrNull()?.toString() ?: "Unknown"
+        val fullname = "${ClassInfo.prefixWatchListAndSafeList(classInfo)}${classInfo.name}"
+        print("#%-8s %-10s %s\n".format(instancesLastDump, bytesLastDump, fullname))
     }
 
 }

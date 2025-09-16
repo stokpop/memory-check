@@ -19,6 +19,7 @@ import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.core.main
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.option
+import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.types.double
 import com.github.ajalt.clikt.parameters.types.file
 import com.github.ajalt.clikt.parameters.types.int
@@ -63,6 +64,9 @@ class MemoryCheckCli : CliktCommand() {
     private val watchListFile by option("-wlf", "--watch-list-file",
         help = "The safe list file. Should contain one fully qualified classname per line.")
         .file(mustExist=true, canBeDir=false)
+    private val reportUsedFiles: Boolean by option("-ruf", "--report-used-files",
+        help = "Include the list of used files (histograms, safe/watch list files) in the JSON and HTML reports.")
+        .flag(default = false)
 
     override fun run() {
         val reportDateTime = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH-mm"))
@@ -108,7 +112,10 @@ class MemoryCheckCli : CliktCommand() {
                 extension = extension,
                 identifier = processedId,
                 reportDateTime = reportDateTime,
-                reportLimits = reportLimits
+                reportLimits = reportLimits,
+                reportUsedFiles = reportUsedFiles,
+                safeListFilePath = safeListFile?.absolutePath,
+                watchListFilePath = watchListFile?.absolutePath
         )
 
         try {
@@ -174,7 +181,13 @@ class MemoryCheck {
 
         val analysis = HistoAnalyser.analyse(readHistos, reportConfig)
 
-        val reportData = ReportAnalyser.createHeapHistogramDumpReport(analysis, reportLimits)
+        val usedFiles = if (reportConfig.reportUsedFiles) nl.stokpop.memory.domain.json.UsedFilesReport(
+            histogramFiles = files.map { it.absolutePath },
+            safeListFile = reportConfig.safeListFilePath,
+            watchListFile = reportConfig.watchListFilePath
+        ) else null
+
+        val reportData = ReportAnalyser.createHeapHistogramDumpReport(analysis, reportLimits, usedFiles)
         TextReport.report(readHistos, reportData, reportConfig)
         val jsonReportFile = JsonReport.report(reportData, reportConfig)
         val htmlReportFile = HtmlGraphCreator.writeHtmlGoogleGraphFile(reportData, reportConfig)

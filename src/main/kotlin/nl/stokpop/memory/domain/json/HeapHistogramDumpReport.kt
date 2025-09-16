@@ -25,7 +25,8 @@ data class HeapHistogramDumpReport(
     val reportLimits: ReportLimits,
     val leakResult: AnalysisResult,
     val heapHistogramDumpSummary: HeapHistogramDumpSummary,
-    val heapHistogramDumpDetails: HeapHistogramDumpDetails
+    val heapHistogramDumpDetails: HeapHistogramDumpDetails,
+    val usedFiles: UsedFilesReport? = null
 )
 
 @Serializable
@@ -47,4 +48,11 @@ class ClassHistogramDetails(
 @Serializable
 data class HeapHistogramDumpSummary (
         val data: Map<AnalysisResult, Int>
+)
+
+@Serializable
+data class UsedFilesReport(
+    val histogramFiles: List<String>,
+    val safeListFile: String? = null,
+    val watchListFile: String? = null
 )

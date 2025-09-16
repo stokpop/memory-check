@@ -20,10 +20,11 @@ import nl.stokpop.memory.domain.json.ClassHistogramDetails
 import nl.stokpop.memory.domain.json.HeapHistogramDumpDetails
 import nl.stokpop.memory.domain.json.HeapHistogramDumpReport
 import nl.stokpop.memory.domain.json.HeapHistogramDumpSummary
+import nl.stokpop.memory.domain.json.UsedFilesReport
 
 object ReportAnalyser {
 
-    fun createHeapHistogramDumpReport(classGrowthTrend: ClassGrowthTrend, reportLimits: ReportLimits) : HeapHistogramDumpReport {
+    fun createHeapHistogramDumpReport(classGrowthTrend: ClassGrowthTrend, reportLimits: ReportLimits, usedFiles: UsedFilesReport? = null) : HeapHistogramDumpReport {
 
         val analysisResultToCount = AnalysisResult.values().asSequence()
                 .map { it to classGrowthTrend.statusCount(it, reportLimits.byteLimit) }
@@ -94,7 +95,8 @@ object ReportAnalyser {
                 reportLimits = reportLimits,
                 leakResult = leakResult,
                 heapHistogramDumpSummary = heapHistogramDumpSummary,
-                heapHistogramDumpDetails = heapHistogramDumpDetails)
+                heapHistogramDumpDetails = heapHistogramDumpDetails,
+                usedFiles = usedFiles)
     }
 
     private fun isLargerThanBytesInLastHisto(it: ClassGrowth, minSizeInBytes: Long): Boolean {

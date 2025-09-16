@@ -19,6 +19,7 @@ import nl.stokpop.memory.domain.AnalysisResult
 import nl.stokpop.memory.domain.ClassInfo
 import nl.stokpop.memory.domain.json.ClassHistogramDetails
 import nl.stokpop.memory.domain.json.HeapHistogramDumpReport
+import nl.stokpop.memory.domain.json.UsedFilesReport
 import nl.stokpop.memory.util.ConversionUtils
 import java.io.File
 
@@ -135,6 +136,9 @@ object HtmlGraphCreator {
     <div id="chart_div_instances" style="width: 96%; min-height: 800px; height: 50%; margin-left: auto; margin-right: auto"></div>
     <div id="chart_div_instances_diff" style="width: 96%; min-height: 800px; height: 50%; margin-left: auto; margin-right: auto"></div>
   </body>
+  <div style="margin: 5%">
+  ###USED_FILES###
+  </div>
 </html>"""
 
     fun writeHtmlGoogleGraphFile(data: HeapHistogramDumpReport, reportConfig: ReportConfig): File {
@@ -155,6 +159,8 @@ object HtmlGraphCreator {
             template = createBytesTableDiff(title, timestamps, details, template)
             template = createInstancesTable(title, timestamps, details, template)
             template = createInstancesTableDiff(title, timestamps, details, template)
+
+            template = template.replace("###USED_FILES###", data.usedFiles?.let { listOfUsedFiles( it) } ?: "")
         }
         val file = File(reportConfig.reportDirectory, "heapHistogramDumpReport-$title.html")
         file.writeText(template)
@@ -186,6 +192,7 @@ object HtmlGraphCreator {
             "<tr><td>${it.key}</td><td>${it.value}</td><td>${mapToUnicodeArrow(it.key)}</td><td>${it.key.description}</td></tr>"
         }.joinToString(separator = "\n"))
         html.append("</table>")
+        
         return html.toString()
     }
 
@@ -322,4 +329,28 @@ object HtmlGraphCreator {
         return newTemplate
     }
 
+}
+
+private fun listOfUsedFiles(usedFilesReport: UsedFilesReport): String {
+    val html = StringBuilder(2048)
+
+    html.append("<h3>Used files</h3>")
+    html.append("<ul>")
+    // histogram files
+    usedFilesReport.histogramFiles.forEach { f ->
+        val name = File(f).name
+        html.append("<li>Histogram: <b>").append(name).append("</b></li>")
+    }
+    // safe list file
+    usedFilesReport.safeListFile?.let { f ->
+        val name = File(f).name
+        html.append("<li>Safe list file: <b>").append(name).append("</b></li>")
+    }
+    // watch list file
+    usedFilesReport.watchListFile?.let { f ->
+        val name = File(f).name
+        html.append("<li>Watch list file: <b>").append(name).append("</b></li>")
+    }
+    html.append("</ul>")
+    return html.toString()
 }
