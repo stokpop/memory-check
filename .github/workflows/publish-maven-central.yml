@@ -19,6 +19,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           java-version: 11
+          distribution: 'zulu'
       - name: Decode secrets file
         env:
           SECRETS_PROPERTIES: ${{ secrets.SECRETS_PROPERTIES }}
