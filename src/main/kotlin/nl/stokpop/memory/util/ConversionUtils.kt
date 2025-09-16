@@ -27,7 +27,7 @@ object ConversionUtils {
         val trimmed = input.trim()
         val numbers = trimmed.takeWhile { Character.isDigit(it) || it == '.'}
         val whitespace = trimmed.substring(numbers.length).takeWhile { Character.isSpaceChar(it) }
-        val letters = trimmed.substring(numbers.length + whitespace.length).takeWhile { Character.isLetter(it) }.toLowerCase()
+        val letters = trimmed.substring(numbers.length + whitespace.length).takeWhile { Character.isLetter(it) }.lowercase()
 
         if (numbers.isEmpty()) throw NumberConversionException("No numbers found in '$trimmed'")
         val value = numbers.toDouble()

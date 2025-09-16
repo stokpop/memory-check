@@ -50,13 +50,7 @@ application {
     mainClass.set("nl.stokpop.memory.MemoryCheckKt")
 }
 
-tasks {
-    "assemble" {
-        dependsOn(fatJar)
-    }
-}
-
-val fatJar = task("fatJar", type = Jar::class) {
+val fatJar by tasks.registering(Jar::class) {
     archiveBaseName.set("${project.name}-exec")
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     manifest {
@@ -65,7 +59,11 @@ val fatJar = task("fatJar", type = Jar::class) {
         attributes["Main-Class"] = "nl.stokpop.memory.MemoryCheckKt"
     }
     from(configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it).matching { exclude { it.name.contains("MANIFEST") } } })
-    with(tasks.jar.get() as CopySpec)
+    with(tasks.named<Jar>("jar").get() as CopySpec)
+}
+
+tasks.named("assemble") {
+    dependsOn(fatJar)
 }
 
 // prevent alpha releases as a suggestion to update in dependencyUpdates

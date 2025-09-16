@@ -16,6 +16,7 @@
 package nl.stokpop.memory
 
 import com.github.ajalt.clikt.core.CliktCommand
+import com.github.ajalt.clikt.core.main
 import com.github.ajalt.clikt.parameters.options.default
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.types.double
@@ -69,9 +70,9 @@ class MemoryCheckCli : CliktCommand() {
         val timestampRegex = "#ts#".toRegex()
         val processedId = if (timestampRegex.containsMatchIn(identifier)) timestampRegex.replace(identifier, reportDateTime) else identifier
 
-        val reportSettings = if (categories.toLowerCase() == "all") AnalysisResult.values().toSet()
+        val reportSettings = if (categories.lowercase() == "all") AnalysisResult.values().toSet()
             else categories.split(',')
-                .map { s -> s.toUpperCase() }
+                .map { s -> s.uppercase() }
                 .mapNotNull { s -> parseAnalysisResult(s) }
                 .toSet()
 
